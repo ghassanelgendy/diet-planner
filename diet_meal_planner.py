@@ -662,22 +662,21 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
 
 def initialize_population(pop_size, num_foods, min_portion=0, max_portion=300):
     """
-    Initialize a population of meal plans.
-    Each individual is represented as a list of food portions in grams.
+    Initialize a population of daily meal plans.
+    Each individual is a 1D array of food portions in grams.
+    Shape: (pop_size, num_foods)
     """
     population = []
     for _ in range(pop_size):
-        # Create an individual with random portions (0-300g) for each food
-        individual = np.random.uniform(min_portion, max_portion, num_foods)
-        population.append(individual)
-        print("Individual:", individual)
-        print("Individual sum:", np.sum(individual))
+        # Daily plan is a 1D array
+        daily_plan = np.random.uniform(min_portion, max_portion, num_foods)
+        population.append(daily_plan)
     return np.array(population)
 
 
-def calculate_nutrition(individual):
-    """Calculate total nutrition and cost for a meal plan."""
-    total = {
+def calculate_nutrition_and_cost_for_day(daily_chromosome_portions):
+    """Calculate total nutrition and cost for a single day's meal plan (1D chromosome)."""
+    daily_totals = {
         "calories": 0,
         "protein": 0,
         "fats": 0,
@@ -688,149 +687,177 @@ def calculate_nutrition(individual):
         "cost": 0,
     }
 
-    for i, portion in enumerate(individual):
-        if portion > 0:  # Only count foods with non-zero portions
-            food = FOOD_ITEMS[i]
-            food_data = FOOD_DATABASE[food]
+    for i, portion in enumerate(daily_chromosome_portions):
+        if portion > 0:
+            food_name = FOOD_ITEMS[i]  # FOOD_ITEMS must be globally defined
+            food_data = FOOD_DATABASE[
+                food_name
+            ]  # FOOD_DATABASE must be globally defined
 
-            # Calculate nutrition based on portion size (per 100g)
             factor = portion / 100.0
-            for nutrient in total.keys():
-                if nutrient in food_data:
-                    total[nutrient] += food_data[nutrient] * factor
-    return total
+            for (
+                nutrient_key
+            ) in daily_totals.keys():  # Iterate over keys in daily_totals
+                if nutrient_key in food_data:
+                    daily_totals[nutrient_key] += food_data[nutrient_key] * factor
+    return daily_totals
 
 
+# Replace the existing calculate_fitness function
 def calculate_fitness(
-    individual, requirements, user_profile, generation, max_generations
-):  # Added user_profile
+    daily_chromosome,  # Renamed from weekly_chromosome
+    requirements: Dict[str, float],
+    user_profile: Dict[str, Any],
+    generation: int,  # Gen
+    max_generations: int,  # Gen_max
+):
     """
-    Calculate the fitness of an individual meal plan.
-    Higher fitness is better.
+    Calculate the fitness of a daily meal plan based on the provided mathematical formulation.
+    Fitness_GA(x, Gen) = -ActualCost(x) - (PW(Gen) * TotalNutrientBasePenalty(x) + P_small_portions_base(x))
     """
-    nutrition = calculate_nutrition(individual)
-    goal = user_profile["goal"].lower()
+    # 1. Calculate Actual_k(x) and ActualCost(x)
+    # daily_chromosome is 'x' in the formulation
+    actual_nutrition_and_cost = calculate_nutrition_and_cost_for_day(daily_chromosome)
+    actual_cost = actual_nutrition_and_cost.pop(
+        "cost"
+    )  # Remove cost for nutrient penalty calculation
 
-    # Initialize penalty score
-    penalty = 0
+    # 2. Calculate Base Penalty Functions (Unscaled)
+    total_nutrient_base_penalty = 0
+    goal = user_profile["goal"].lower()  # GoalUser
 
-    # Dynamic penalty weight that increases over generations
-    # Start with lenient penalties and gradually increase strictness
-    penalty_weight = 0.5 + 4.5 * (generation / max_generations)
+    # Define BasePenaltyMult_k_condition and Thresh_k_condition (as per your previous script logic)
+    # These are the multipliers and thresholds for penalties BEFORE PW(Gen) scaling.
+    # Example for calories (you'll need to define these for all nutrients based on your old penalty structure)
+    # This section needs to mirror the penalty logic from your original daily planner's fitness function.
 
-    # Penalties for nutrient deficiencies or excesses
-    for nutrient, target in requirements.items():
-        if nutrient == "cost":  # Skip cost as it's our objective to minimize
-            continue
+    # --- Calorie Base Penalty P_calories_base(x) ---
+    ac_calories = actual_nutrition_and_cost.get("calories", 0)
+    tc_calories = requirements.get(
+        "calories", 1
+    )  # Target_calories, avoid division by zero
+    p_calories_base = 0
+    # These multipliers (100, 60, 80 etc.) are BasePenaltyMult_k_condition
+    if goal == "lose":
+        thresh_over = tc_calories * 1.02  # Thresh_calories_lose_over
+        thresh_under = tc_calories * 0.95  # Thresh_calories_lose_under
+        if ac_calories > thresh_over:
+            dev_over = (ac_calories - thresh_over) / tc_calories
+            p_calories_base += 100 * dev_over**2  # BasePenaltyMult_cal_lose_over
+        elif ac_calories < thresh_under:
+            dev_under = (
+                thresh_under - ac_calories
+            ) / thresh_under  # Denominator as per your previous stricter version
+            p_calories_base += 60 * dev_under**2  # BasePenaltyMult_cal_lose_under
+    elif goal == "gain":
+        thresh_under = tc_calories * 0.98
+        thresh_over = tc_calories * 1.10
+        if ac_calories < thresh_under:
+            dev_under = (thresh_under - ac_calories) / thresh_under
+            p_calories_base += 100 * dev_under**2
+        elif ac_calories > thresh_over:
+            dev_over = (ac_calories - thresh_over) / tc_calories
+            p_calories_base += 40 * dev_over**2
+    else:  # maintain
+        thresh_lower = tc_calories * 0.95
+        thresh_upper = tc_calories * 1.05
+        if not (thresh_lower <= ac_calories <= thresh_upper):
+            dev = abs(ac_calories - tc_calories) / tc_calories
+            p_calories_base += 80 * dev**2
+    total_nutrient_base_penalty += p_calories_base
 
-        actual = nutrition.get(nutrient, 0)
-        deviation_ratio = 0
+    # --- Protein Base Penalty P_protein_base(x) ---
+    ac_protein = actual_nutrition_and_cost.get("protein", 0)
+    tc_protein = requirements.get("protein", 1)
+    p_protein_base = 0
+    thresh_prot_under = tc_protein * 0.90
+    thresh_prot_over = tc_protein * 1.30
+    if ac_protein < thresh_prot_under:
+        dev_under = (thresh_prot_under - ac_protein) / thresh_prot_under
+        p_protein_base += 20 * dev_under**2
+    elif ac_protein > thresh_prot_over:
+        dev_over = (ac_protein - thresh_prot_over) / tc_protein
+        p_protein_base += 5 * dev_over**2
+    total_nutrient_base_penalty += p_protein_base
 
-        # --- Calorie Penalty (Goal-Specific) ---
-        if nutrient == "calories":
-            if goal == "lose":
-                if (
-                    actual > target * 1.02
-                ):  # More than 2% over for weight loss is bad (stricter)
-                    deviation_ratio = (actual - target * 1.02) / target
-                    penalty += (
-                        penalty_weight
-                        * 100
-                        * deviation_ratio**2  # Increased multiplier
-                    )  # Higher penalty for excess
-                elif actual < target * 0.95:  # More than 5% below (stricter)
-                    deviation_ratio = (target * 0.95 - actual) / (target * 0.95)
-                    penalty += (
-                        penalty_weight * 60 * deviation_ratio**2
-                    )  # Increased multiplier
-            elif goal == "gain":
-                if (
-                    actual < target * 0.98
-                ):  # More than 2% below for weight gain is bad (stricter)
-                    deviation_ratio = (target * 0.98 - actual) / (target * 0.98)
-                    penalty += (
-                        penalty_weight
-                        * 100
-                        * deviation_ratio**2  # Increased multiplier
-                    )  # Higher penalty for deficit
-                elif actual > target * 1.1:  # More than 10% over (stricter)
-                    deviation_ratio = (actual - target * 1.1) / target
-                    penalty += (
-                        penalty_weight * 40 * deviation_ratio**2
-                    )  # Increased multiplier
-            else:  # maintain
-                if (
-                    actual < target * 0.95 or actual > target * 1.05
-                ):  # 5% deviation (stricter)
-                    deviation_ratio = abs(actual - target) / target
-                    penalty += (
-                        penalty_weight * 80 * deviation_ratio**2
-                    )  # Increased multiplier
+    # --- Fats Base Penalty P_fats_base(x) ---
+    ac_fats = actual_nutrition_and_cost.get("fats", 0)
+    tc_fats = requirements.get("fats", 1)
+    p_fats_base = 0
+    thresh_fats_over = tc_fats * 1.15
+    thresh_fats_under = tc_fats * 0.70  # if fats are essential
+    if ac_fats > thresh_fats_over:
+        dev_over = (ac_fats - thresh_fats_over) / tc_fats
+        p_fats_base += 15 * dev_over**2
+    elif ac_fats < thresh_fats_under:  # Assuming some fats are needed
+        dev_under = (thresh_fats_under - ac_fats) / thresh_fats_under
+        p_fats_base += 10 * dev_under**2
+    total_nutrient_base_penalty += p_fats_base
 
-        # --- Protein Penalty ---
-        elif nutrient == "protein":
-            # Generally important to meet protein goals, especially for gain/lose
-            if actual < target * 0.9:  # More than 10% below
-                deviation_ratio = (target * 0.9 - actual) / (target * 0.9)
-                penalty += penalty_weight * 20 * deviation_ratio**2
-            elif (
-                actual > target * 1.3
-            ):  # More than 30% above (can be wasteful or strain kidneys in extreme)
-                deviation_ratio = (actual - target * 1.3) / target
-                penalty += penalty_weight * 5 * deviation_ratio**2
+    # --- Cholesterol Base Penalty P_cholesterol_base(x) ---
+    ac_chol = actual_nutrition_and_cost.get("cholesterol", 0)
+    tc_chol = requirements.get("cholesterol", 1)  # Max target
+    p_chol_base = 0
+    thresh_chol_over = tc_chol * 1.15  # Max is 1.0 * target, so 1.15 is over
+    if ac_chol > thresh_chol_over:  # Only penalize if over
+        dev_over = (
+            ac_chol - thresh_chol_over
+        ) / tc_chol  # Denominator could be tc_chol or thresh_chol_over
+        p_chol_base += 15 * dev_over**2  # Using same multiplier as fats for "over"
+    total_nutrient_base_penalty += p_chol_base
 
-        # --- Fats and Cholesterol Penalty ---
-        elif nutrient in ["fats", "cholesterol"]:
-            # Being above target is generally worse for these
-            if actual > target * 1.15:  # More than 15% above
-                deviation_ratio = (actual - target * 1.15) / target
-                penalty += penalty_weight * 15 * deviation_ratio**2
-            elif (
-                actual < target * 0.7 and nutrient == "fats"
-            ):  # Fats are essential, don't go too low
-                deviation_ratio = (target * 0.7 - actual) / (target * 0.7)
-                penalty += penalty_weight * 10 * deviation_ratio**2
+    # --- Vitamins Base Penalty P_vitamins_base(x) ---
+    ac_vit = actual_nutrition_and_cost.get("vitamins", 0)
+    tc_vit = requirements.get("vitamins", 1)
+    p_vit_base = 0
+    thresh_vit_under = tc_vit * 0.70
+    thresh_vit_over = tc_vit * 1.50  # Wider range for vitamins
+    if ac_vit < thresh_vit_under:
+        dev_under = (thresh_vit_under - ac_vit) / thresh_vit_under
+        p_vit_base += 5 * dev_under**2
+    elif ac_vit > thresh_vit_over:
+        dev_over = (ac_vit - thresh_vit_over) / tc_vit
+        p_vit_base += 2 * dev_over**2
+    total_nutrient_base_penalty += p_vit_base
 
-        # --- Vitamins Penalty (more lenient due to arbitrary units) ---
-        elif nutrient == "vitamins":
-            if actual < target * 0.7:  # Wider acceptable range (30% below)
-                deviation_ratio = (target * 0.7 - actual) / (target * 0.7)
-                penalty += (
-                    penalty_weight * 5 * deviation_ratio**2
-                )  # Lower penalty multiplier
-            elif actual > target * 1.5:  # Wider acceptable range (50% above)
-                deviation_ratio = (actual - target * 1.5) / target
-                penalty += (
-                    penalty_weight * 2 * deviation_ratio**2
-                )  # Lower penalty multiplier
+    # --- Carbs and Iron Base Penalties (example of 'other nutrients') ---
+    for nutrient_key in ["carbs", "iron"]:
+        ac_nutrient = actual_nutrition_and_cost.get(nutrient_key, 0)
+        tc_nutrient = requirements.get(nutrient_key, 1)
+        p_nutrient_base = 0
+        thresh_lower = tc_nutrient * 0.85
+        thresh_upper = tc_nutrient * 1.15
+        if not (thresh_lower <= ac_nutrient <= thresh_upper):
+            dev = abs(ac_nutrient - tc_nutrient) / tc_nutrient
+            p_nutrient_base += 10 * dev**2  # BasePenaltyMult_other_dev
+        total_nutrient_base_penalty += p_nutrient_base
 
-        # --- Other Nutrients (Carbs, Iron) ---
-        else:
-            # Default: Equal penalty for being too high or too low within a 10-15% range
-            if actual < target * 0.85 or actual > target * 1.15:  # 15% deviation
-                deviation_ratio = abs(actual - target) / target
-                penalty += penalty_weight * 10 * deviation_ratio**2
+    # --- Base Small Portions Penalty P_small_portions_base(x) ---
+    # PortionMin_practical = 20g
+    small_portion_count = sum(1 for portion in daily_chromosome if 0 < portion < 20)
+    p_small_portions_base = 0.75 * small_portion_count
 
-    # Penalty for having too many foods with tiny portions (adds complexity)
-    # Consider making 20g a parameter or scaling penalty more
-    small_portion_count = sum(1 for p in individual if 0 < p < 20)
-    penalty += (
-        small_portion_count * 0.75
-    )  # Slightly increased penalty for tiny portions
+    # 3. Dynamic Penalty Weight PW(Gen)
+    # PW(Gen) = 0.5 + 4.5 * (Gen / Gen_max)
+    # Ensure max_generations is not zero to avoid division by zero error
+    if max_generations == 0:  # Should not happen if GA is set up correctly
+        pw_gen = 0.5
+    else:
+        pw_gen = 0.5 + 4.5 * (generation / max_generations)
 
-    # Allergy penalty (if implemented)
-    # if 'allergies' in user_profile and user_profile['allergies']:
-    #     for i, portion in enumerate(individual):
-    #         if FOOD_ITEMS[i] in user_profile['allergies'] and portion > 0:
-    #             penalty += 1000  # Large penalty for allergens
+    # 4. Fitness Value Used by GA: Fitness_GA(x, Gen)
+    # Fitness_GA(x, Gen) = -ActualCost(x) - (PW(Gen) * TotalNutrientBasePenalty(x) + P_small_portions_base(x))
+    fitness = -actual_cost - (
+        pw_gen * total_nutrient_base_penalty + p_small_portions_base
+    )
 
-    # The main objective: minimize cost
-    cost = nutrition["cost"]
+    # Return fitness and the original actual_nutrition_and_cost (which includes cost now)
+    # For tracking purposes, it's good to have the full nutrition breakdown.
+    # We re-add cost to actual_nutrition_and_cost for the return, as it was popped.
+    actual_nutrition_and_cost_with_cost = actual_nutrition_and_cost.copy()
+    actual_nutrition_and_cost_with_cost["cost"] = actual_cost
 
-    # Final fitness: higher is better, so we negate the cost and penalties
-    fitness = -cost - penalty
-
-    return fitness, nutrition
+    return fitness, actual_nutrition_and_cost_with_cost
 
 
 def tournament_selection(population, fitnesses, tournament_size=250):
@@ -968,89 +995,86 @@ def elitism(population, new_population, fitnesses, elite_size=2):
     return new_population
 
 
-def genetic_algorithm(user_profile, pop_size=1500, generations=200, elite_size=10):
+def genetic_algorithm(user_profile, pop_size=1500, generations=150, elite_size=10):
     """
-    Main genetic algorithm loop for diet planning.
+    Main genetic algorithm loop for DAILY diet planning.
     """
-    # Calculate nutritional requirements
     requirements = calculate_daily_needs(user_profile)
+    num_foods = len(FOOD_ITEMS)  # FOOD_ITEMS must be globally defined
 
-    # Initialize population
-    num_foods = len(FOOD_ITEMS)
+    # Initialize population of 1D daily plans
     population = initialize_population(pop_size, num_foods)
 
     best_fitness = float("-inf")
-    best_individual = None
-    best_nutrition = None
+    best_individual = None  # Will be a 1D daily plan
+    best_nutrition_info = None  # Will be a dict of daily nutrition
 
-    # Main loop
     for generation in range(generations):
-        # Evaluate fitness
         fitnesses = []
-        nutritions = []
-        for individual in population:
-            fitness, nutrition = calculate_fitness(  # Pass user_profile here
+        nutrition_infos = []  # Store full nutrition info for the best individual
+
+        for individual in population:  # individual is a 1D daily plan
+            fitness, nutrition_info = calculate_fitness(
                 individual, requirements, user_profile, generation, generations
             )
             fitnesses.append(fitness)
-            nutritions.append(nutrition)
+            nutrition_infos.append(nutrition_info)
 
-        # Track best solution
         max_fitness_idx = np.argmax(fitnesses)
         if fitnesses[max_fitness_idx] > best_fitness:
             best_fitness = fitnesses[max_fitness_idx]
             best_individual = population[max_fitness_idx].copy()
-            best_nutrition = nutritions[max_fitness_idx]
+            best_nutrition_info = nutrition_infos[max_fitness_idx]
 
             print(
-                f"Generation {generation}: Found better solution with fitness {best_fitness:.2f}"
+                f"Generation {generation}: New best fitness {best_fitness:.2f}, Cost: EGP{best_nutrition_info['cost']:.2f}"
             )
 
-        # Selection
-        selected = tournament_selection(population, fitnesses)
+        selected = tournament_selection(
+            population, fitnesses
+        )  # Assumes tournament_selection returns 1D plans
+        offspring = crossover_population(
+            selected
+        )  # Assumes crossover_population works with 1D plans
 
-        # Crossover
-        offspring = crossover_population(selected)
+        # Mutation rate can still be dynamic if desired, but PW(Gen) handles penalty scaling
+        current_mutation_prob = 0.2 * (1 - generation / generations)  # Example
+        offspring = mutate_population(
+            offspring, mutation_rate=current_mutation_prob
+        )  # Assumes mutate_population works with 1D plans
 
-        # Mutation
-        offspring = mutate_population(offspring)
-
-        # Elitism
         population = elitism(population, offspring, fitnesses, elite_size)
 
-        # Reduce mutation rate over time for fine-tuning
-        mutation_rate = 0.2 * (1 - generation / generations)
-
-    # Return best meal plan found
-    return best_individual, best_nutrition
+    return best_individual, best_nutrition_info  # Return daily plan and its nutrition
 
 
-def format_meal_plan(individual, nutrition):
-    """Format the meal plan for display."""
-    result = []
-    result.append("\n===== OPTIMAL DIET PLAN =====")
+def format_meal_plan(daily_chromosome, daily_nutrition_info, user_profile):
+    """Format the DAILY meal plan for display."""
+    result = ["\n===== OPTIMAL DAILY DIET PLAN ====="]
 
-    total_calories = nutrition["calories"]
-    total_cost = nutrition["cost"]
+    cost = daily_nutrition_info.get("cost", 0)
+    result.append(f"Total Daily Cost: EGP{cost:.2f}")
 
-    result.append(f"\nTotal Daily Calories: {total_calories:.1f} kcal")
-    result.append(f"Total Daily Cost: EGP{total_cost:.2f}")
+    result.append("\nDaily Nutritional Profile:")
+    for nutrient, value in daily_nutrition_info.items():
+        if nutrient != "cost":
+            result.append(f"  - {nutrient.capitalize()}: {value:.1f}")
 
-    result.append("\nNutritional Profile:")
-    result.append(f"  - Protein: {nutrition['protein']:.1f}g")
-    result.append(f"  - Fats: {nutrition['fats']:.1f}g")
-    result.append(f"  - Carbs: {nutrition['carbs']:.1f}g")
-    result.append(f"  - Iron: {nutrition['iron']:.1f}mg")
-    result.append(f"  - Cholesterol: {nutrition['cholesterol']:.1f}mg")
-
-    result.append("\nRecommended Daily Foods:")
-    for i, portion in enumerate(individual):
+    result.append("\nFoods to Eat:")
+    foods_for_day = []
+    for i, portion in enumerate(daily_chromosome):
         if portion > 10:  # Only show foods with significant portions
-            food = FOOD_ITEMS[i]
-            food_cost = FOOD_DATABASE[food]["cost"] * portion / 100.0
-            result.append(
-                f"  - {food.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_cost:.2f})"
+            food_name = FOOD_ITEMS[i]  # FOOD_ITEMS must be globally defined
+            food_item_cost = (
+                FOOD_DATABASE[food_name]["cost"] * portion / 100.0
+            )  # FOOD_DATABASE must be globally defined
+            foods_for_day.append(
+                f"    - {food_name.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_item_cost:.2f})"
             )
+    if foods_for_day:
+        result.extend(foods_for_day)
+    else:
+        result.append("    No significant food portions for this day.")
 
     return "\n".join(result)
 
@@ -1060,22 +1084,28 @@ def main():
     user_profile = {
         "age": 21,
         "gender": "Male",
-        "weight": 75,  # kg
-        "height": 183,  # cm
+        "weight": 75,
+        "height": 183,
         "activity_level": "Moderate",
-        "goal": "a88",
+        "goal": "maintain",
         "allergies": [],
+        # "monthly_budget": 2500 # Not used in daily planning directly by fitness function
     }
 
-    print("Running genetic algorithm to find optimal diet plan...")
-    print("This may take a few minutes...")
-
+    print("Running genetic algorithm to find optimal DAILY diet plan...")
+    # ... (rest of main, calling genetic_algorithm and format_meal_plan) ...
+    # ... existing code ...
     # Run the genetic algorithm
-    best_individual, best_nutrition = genetic_algorithm(user_profile)
+    best_daily_individual, best_daily_nutrition = genetic_algorithm(user_profile)
 
     # Display the result
-    result = format_meal_plan(best_individual, best_nutrition)
-    print(result)
+    if best_daily_individual is not None:
+        result_str = format_meal_plan(
+            best_daily_individual, best_daily_nutrition, user_profile
+        )
+        print(result_str)
+    else:
+        print("No suitable daily meal plan found.")
 
 
 if __name__ == "__main__":
