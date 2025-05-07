@@ -1,0 +1,1245 @@
+See discussions, st ats, and author pr ofiles f or this public ation at : https://www .researchgate.ne t/public ation/357234565
+Optimization using Genetic Algorithm in Food Composition
+Article    in  International Journal of Computing and Digit al Syst ems  · No vember 2021
+DOI: 10.12785/ ijcds/100191
+CITATIONS
+2READS
+1,111
+2 author s:
+Adriy endi --
+UIN Mahmud Y unus Bat usangk ar
+19 PUBLICA TIONS    174 CITATIONS    
+SEE PROFILE
+Yeni Melia
+STAIN Bat usangk ar
+5 PUBLICA TIONS    37 CITATIONS    
+SEE PROFILE
+All c ontent f ollo wing this p age was uplo aded b y Adriy endi --  on 26 Januar y 2022.
+The user has r equest ed enhanc ement of the do wnlo aded file. 
+ 
+ 
+International Journal of Computing and Digital Systems  
+ISSN (2210 -142X)  
+Int. J. Com. Dig. Sys. 10, No.1 ( Oct.-2021)  
+ 
+ 
+E-mail:  adriyendi @iainbatusangkar.ac.id, yenimelia@iainbatusangkar.ac.id  
+  http://journals.uob.edu.bh  http://dx.doi.org/10.12785/ijcds/1001 91 
+ 
+Optimization using Genetic Algorithm in Food Composition  
+ 
+Adriyendi1, Yeni Melia2 
+ 
+1 Informatics Research Group, IAIN Batusangkar, Indonesia  
+2Economic Research Group, IAIN Batusangkar, Indonesia  
+ 
+ 
+Received 05 Jun. 2020, Revised 22 Jul. 2021, Accepted 05 Aug. 2021, Published 28 Oct . 2021 
+ 
+Abstract: This paper aims to process daily food consumption based on the Guideline to Healthy Food or the principle of Healthy 4 
+Perfect 5 (H4P5). The Guideline to Healthy Food does not include the portion and size of daily food consumption, therefore it is 
+perfected into the Guidelines to Balanced Nutrition (GBN). GBN is performed by consuming three servings of protein vegetables , 
+three servings of animal protein, e ight servings of carbohydrates, five servings of vegetables, five servings of fruits, and eight 
+servings of water.  Each part of the portion has a proportional size and dose based on GBN. The portions are measured by food  
+composition using the optimization  process using a Genetic Algorithm (GA). Optimization by a using Genetic Algorithm yielded 
+three outputs, namely, first, the initial objective function (0) compared to the generative objective function (1) produces a  value of 
+6.13: 4.72 (there is an increa se in chromosomes, because, the smaller the value, the better the chromosome is). Second, probability 
+mutation is 50% of mutation rate, crossover probability is 5%, the maximum generation is 36, the maximum fitness point is 
+0.240806, and the size of the po pulation is 6. Third, optimization using the Genetic Algorithm in food composition produces one 
+food model, one consumption model, and one composition model. Thus, the result of this research (food model, consumption mode l, 
+and composition model) can be a recommendation for food consumption patterns (normal condition) and a reference for national 
+food consumption policies.  
+ 
+ 
+Keywords:  Optimization, Genetic Algorithm, Food Composition  
+ 
+1. INTRODUCTION  
+Optimization is a set of problems in mathematics to 
+obtain a unique and optimum value. It is used for 
+computational problems with algorithms that are based on 
+mathematical models [1]. One of the mathematical models 
+is a combination model. This combination uses 
+mathematical equations for combinations of food 
+composition based on balanced nutrition [2]. Balanced 
+nutrition is food containing nutrients from food sources as 
+energy -producing substances (carbohydrates and fats), 
+food sources as regulator substance s (vegetable and animal 
+protein), and food sources as protective substances (water, 
+vitamin, and minerals). The function of balanced nutrition 
+is to maintain and strengthen endurance, maintain balanced 
+body weight, increase disease resistance, and improve 
+healthy life quality. Based on normal portions and general 
+standards in all groups in Indonesia, the compositions of 
+food with balanced nutrition for daily consumption are 2 -3 
+servings of vegetable protein, 2 -3 servings of animal 
+protein, 3 -8 servings of c arbohydrates, 3 -5 servings of vegetables, 3 -5 servings of fruits, and 8 servings of water 
+(2 liters). Each portion is based on minimum nutritional 
+requirements [3].  
+TABLE I.  FOOD SOURCE  
+Source  Comparison  
+Health 4 Perfect 5 
+Pattern  Balanced Nutrition  
+Energy -producing 
+substances  Carbohydrate  Carbohydrate 50%  
+Energy -producing 
+substances  Fat Fat 30%  
+Regulator 
+substances  Protein  Protein 15%  
+Protective substance  Vitamin &Mineral  Vitamin & Mineral 5%  
+Pattern  4 health as a staple 
+food and milk as a 
+compl ement  Consumption of various 
+food, healthy lifestyle, 
+maintain ideal body  
+weight, active sports  
+ 
+In this paper, Table 1 suggests some healthy messages. 
+First, the Healthy Eating Guideline (HEG) with Healthy 4 
+Perfect 5 pattern emphasizes the message of food  
+ 
+1020        Adriyendi & Yeni Melia:   Optimization using Genetic Algorithm in Food Composition …    
+ 
+ 
+http://journals.uob.edu.bh  consumption on the importance of consumption of rice, 
+side dishes, vegetables, fruits as staple  foods. Secondly is 
+the importance of consuming milk as a separate food or 
+drink. Because of its nutritional content namely protein 
+and minerals, it is beneficial to complement perfect food 
+consumption. Third, there is no exact portion size of food 
+to be c onsumed in one day in HEG. Fourth, the 
+importance of drinking water (the quantity of water 
+needed for consumption is not explained, neither is the 
+quantity of mineral drinking water).  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Figure 1. Structure of paper  
+ 
+Based on Figure 1, in this paper, the structure of the 
+process consists of several elements. Firstly, the food 
+element is a food data source element. Secondly, Healthy 4 
+Perfect 5 pattern as Guide 1 and Balanced Nutrition as 
+Guide 2. Thirdly, optimization is a process for determining 
+the portion and composition problems. Fourthly, a 
+combination model in mathematical form. Fifthly, the 
+Genetic Algorithm is a method of how to produce 
+mathematical solutions. Sixthly, solution as output 
+(alternative solution 1 and solution 2). Seventhly or lastly, 
+output as optimal optimization (food menu, food nutrition, 
+meal times, and food composition based on Food Model, 
+Consumption Model, and Composition Model).  
+The Guideline of Balanced Nutrition is a healthy 
+message by em phasizing the consumption of food with food composition containing nutrient elements that suits 
+the needs of the body, using 7 principles, namely regularly 
+eating a variety of foods, maintaining a clean lifestyle, 
+exercising, and weight monitoring, drinkin g milk, (milk is 
+included in the complementary/non -food group), replacing 
+milk with other food/drinks with similar or equal 
+nutritional value, measuring the portion of the 
+amount/size/food that must be consumed for each type of 
+food, and drinking mineral w ater with an explanation of 
+drinking 2 liters of mineral water or 8 glasses per day. A 
+composition framework is displayed in Figure 2.  
+ 
+Figure 2. Composition framework  
+ 
+Optimization of food composition needs to be done to 
+get the optimal solution for foo d consumed based on the 
+Healthy 4 Perfect 5 pattern and Guidelines of Balanced 
+Nutrition (GBN). The optimal solution is used to obtain the 
+right food composition. The right food comes from the 
+right menu, balanced nutrition, a regular schedule, and 
+proport ional food composition. The food framework is 
+displayed in Figure 3.  
+ 
+ 
+Figure 3. Food framework  
+ 
+First, why is the diet important? In planning a food 
+menu, it is very important to select the right food menu. A 
+healthy diet must meet the amount and variety  of 
+nutritious foods and the types of nutrients needed by the 
+Food  
+ 
+Health 4  
+Perfect 5  
+Pattern  
+ 
+Balanced  
+ Nutrition   
+ 
+Optimization  
+- Portion  
+ - Composition  
+ 
+Combination  
+Model  
+ 
+Genetic  
+Algorithm  
+ 
+Solution  
+2  
+ 
+Solution  
+1 
+ 
+Output  
+  
+ 
+ Int. J. Com. Dig. Sys. 10, No.1, 1019 -1029  (Oct.-2021)                         1021  
+ 
+ 
+http://journals.uob.edu.bh  body. A nutritious diet is needed for optimal growth and 
+the acquisition of nutrients to strengthen the immune 
+system. The food menu must be based on the Healthy 4 
+and Perfect 5 pattern which co nsists of rice, side dishes, 
+vegetables, fruit, and milk while an improved diet is based 
+on the Guidelines of Balanced Nutrition, namely vegetable 
+protein, animal protein, carbohydrates, vegetables, fruit, 
+and water.  
+Second, why is food nutrition important ? The answer is 
+because nutrition can help growth, improve the function of 
+body organs, and provide protection from the risk of 
+diseases. Moreover, the nutritional imbalance can trigger 
+malnutrition which in turn can result in slow growth 
+(stunting). The c omponents of balanced nutrition are 
+carbohydrates, protein, fat, vitamins, minerals, fiber, and 
+water.  
+Third, why is eating time important? A good mealtime 
+is defined as a meal schedule with a regular schedule at 
+the right time. Eating at the wrong time can affect health. 
+Skipping meals also affects the balance of bodily 
+functions as the human body works according to 
+biological working hours which affects mealtime. 
+Delaying meal times can affect digestion and metabolic 
+disorders. Therefore, the best way t o manage your eating 
+schedule is to know when to eat and what portions to 
+support the activities that will be carried out. A good 
+eating schedule consists of breakfast (at 05:00 - 09.00 in 
+the morning), morning mini -meal or snack (10:00 
+morning), lunch (12 :00 - 13:00 noon), afternoon mini -
+meal or snack (15:00 - 16:00 afternoon), and dinner (7:00 
+- 80:00 pm).  
+Fourth, why is the composition important? Food 
+composition is very important for the body. The food must 
+meet the number of calories, portion of food, type of food, 
+amount of nutrition, nutritional value, amount of 
+consumption, and the amount of energy needed by the 
+body. Most importantly the food is consumed according to 
+the right eating schedule. Food consumption is based on 
+GBN, which consists of 3 se rvings of vegetable protein, 3 
+servings of animal protein, 8 servings of carbohydrates, 5 
+servings of vegetables, 5 servings of fruit, and 8 servings 
+of water.    
+2. RELATED WORK 
+One popular computational algorithm for optimization 
+problems is the Genetic Algorithm [4]. A Genetic 
+Algorithm has been proposed by many researchers on food 
+problems. Among the researches are combination menus 
+on cholesterol prevention [5], food compositi on for 
+patients with diabetes mellitus [6], food composition for 
+patients with high blood pressure 7], food composition for 
+hypertensive patients [8], nutritional status can be 
+influenced by balanced nutritional behavior [9], media 
+promotion the tagline “M y Dishes” [10], and the influence 
+of media on web -based and Android nutrition education 
+[11]. The guideline of balanced nutrition is also very important to determine the combination of the composition 
+of food consumed. This combination problem requires the  
+right solution with GBN as it is very necessary for a 
+nutritious diet. Nutritious food menus are needed for food 
+nutrition standards and food nutrition must be by food 
+composition. Food composition needs to be consumed on 
+the right eating schedule. Combin ations of a nutritious and 
+varied diet need to be made because food nutrition requires 
+a variety of foods with optimal composition. More 
+importantly, optimal food composition needs to be 
+consumed at the right time. Thus, this optimization is 
+needed to prod uce an optimal composition with the right 
+combination for food consumption. Food consumption 
+with optimal composition and the right combination can 
+improve the quality of life of healthy people and reduce 
+the risk of illness. This strategy can be one way t o 
+improve public health for approximately 260 million of 
+Indonesia’s population. Because there has not been a clear 
+or proper composition of the guideline of healthy food and 
+there is no optimal scheduling in the guidelines of 
+balanced nutrition, optimizat ion is highly needed. The 
+proposed method is by optimization using a Genetic 
+Algorithm to obtain a clear food composition and optimal 
+scheduling. Therefore, this method is expected to be a 
+recommendation for food consumption patterns and can 
+be a reference  for national food consumption policies.  
+The main contributions of this work are summarized as 
+follows:  
+ The paper presents a novel genetic algorithm based 
+on the food consumption algorithm. The idea 
+presented in the paper is very useful for the society 
+where most of the peoples are unable to take a healthy 
+diet.  
+ The authors implemented in the form of 3 models: the 
+Consumption Model, the Food Model, and the 
+Composition Model.  
+ The paper presented a novel method for maintaining a 
+healthy diet plan. The gen etic algorithm has been 
+used to design a novel model for a healthy diet plan.  
+ In this paper, optimization was applied using a 
+genetic algorithm for food processing scenarios. The 
+result of this research can be a recommendation for 
+food consumption patterns . 
+ This paper presented using a genetic algorithm to 
+optimize food composition based on guidelines of 
+healthy food and balanced food. This study somehow 
+showed interesting finds for a new guideline and can 
+be recommended for Indonesian people in normal 
+cond ition (excluded pregnant, baby, children, and 
+older) and also depend on their activities (excluded 
+working hard, bodybuilder athletes, and food 
+addiction).   
+ 
+1022        Adriyendi & Yeni Melia:   Optimization using Genetic Algorithm in Food Composition …    
+ 
+ 
+http://journals.uob.edu.bh  3. PROPOSED METHOD  
+The proposed method consists of five elements are the 
+data model, optimization, Gen etic Algorithm, food 
+composition, and solution.  
+A. Data Model  
+The daily food consumption data model is explained by 
+the mathematical model in equation (1).  
+ 
+24 85 5833  f e dcba
+    (1) 
+ 
+Where a is the portion of consumption of vegetable 
+protein, b is the portion of animal protein, c is the portion 
+of carbohydrate consumption, d is the portion of vegetable 
+consumption, e is the portion of fruit consumption, and f is 
+the portion of water consumption, and 24 the time of hours 
+in one day ((24 hours to achieve 100%).  
+B. Optimization  
+Optimization is performed using the Genetic Algorithm 
+in food composition. One application of the Genetic 
+Algorithm is solving combinations with mathematical 
+models. This optimization aims to get an optimal value of 
+the solution for a problem that has many solutions. The 
+optimization model is illustrated in the framework 
+displayed in Figure 4.  
+ 
+Figure 4. Optimization framework  
+ 
+A framework is used to find a solution to the problem 
+of food composition. The framework consists of 
+Optimization, Data, Genetic Algorithm, Food 
+Composition, and Solutions. Data models are based on 
+mathematical models. The optimization uses the Genetic 
+Algorithm. The food composition is based on 
+optimization. Output is a model for optimal solutions.    
+C. Genetic Algorithm  
+Based on Flowchart [12], the Genetic Algorithm can 
+solve combinatorial optimization problems for simple 
+solutions. A solution produced in the Genetic Algorithm is 
+called a Chromosome. Chromosome collection is called 
+Population. A chromosome is formed from a component 
+called a Gene. Genes can have values in the form of 
+numeric numbers, binaries, symbols, characters depending 
+on the problem yo u want to solve. Chromosomes will 
+evolve continuously called Generation. In each generation, chromosomes are evaluated on the success rate of the 
+solution to the problem to be solved (objective function) 
+with a measure called Fitness. To select chromosomes  that 
+will be retained for the next generation, a process called 
+Selection is carried out.  
+The chromosomes selection process with a high Fitness 
+Point has a great chance to be re -elected in the next 
+generation. The new chromosome called Offspring is 
+forme d by cross -breeding in a generation called Crossover. 
+The number of chromosomes undergoing crossover is 
+determined by a parameter called the Crossover Rate. The 
+process of changing one or more gene values in a 
+chromosome with a random number is called the Mutation 
+Rate. A solution produced from several generations with 
+chromosomes with the value of gene convergence. 
+Convergence value is the optimal solution (best solution) 
+from the Genetic Algorithm. Optimization using the 
+Genetic Algorithm is done to solve  the problem of 
+combination using a computer (computing) based on the 
+paper [13]. The process of computing the Genetic 
+Algorithm is described in the form of the flowchart shown 
+in Figure 5.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Figure 5. Flowchart  
+D. Food Composition  
+Food composition is based on Balanced Nutrition 
+Guidelines for daily food consumption. Various types of 
+food, various menu choices, time of consumption, and the 
+portion are based on normal calorie needs  per person per 
+day. Daily food intake is adjusted to the number of calories 
+and nutritional value to the needs of pe ople under normal 
+condition s (except for infants, toddlers, children, pregnan t 
+women, sick  people , and elderly  people ). Food 
+composition will be converted into mathematical model s. 
+Initialization  
+ Problem  
+Evaluation  
+Selection  
+Crossover  
+Mutation  
+Solution  
+ Max-
+Gen 
+Gen++   
+ 
+ Int. J. Com. Dig. Sys. 10, No.1, 1019 -1029  (Oct.-2021)                         1023  
+ 
+ 
+http://journals.uob.edu.bh  E. Solution  
+The solution is produced from several generation s with 
+chromosome genes whose  value converge s as optimal 
+solutions from several combinations. An optimal solution 
+is generated in a Genetic Algorithm called Best 
+Chromosome  with a process called Encoding . The 
+returning process called  Decoding will produce the 
+convergence value into the best value as a solution.  
+4. RESULT  AND DISCUSSION  
+A. Data Model  
+The Data Model is used to create mathematical models. 
+Based on Table 2, these components are converted into 
+mathematical models. The model used for solving 
+combination problems is based on equation (1). The food 
+component consists of vegetable protein with portions 
+three times and is symbolized by symbol a. this means that 
+the consumption of a variety of foods containing vegetable 
+protein, the consumption schedule is five times a day 
+(morning, morning mini -meal or snack, lunch, afternoon 
+mini-meal or snack, and dinner). Consumption is valid for 
+1 day or 24 hours. This consumption pattern applies 
+normally to every individual in a healthy condition. The 
+same thing was done for animal protein (symbol b), 
+carbohydrates ((symbol c), vegetables (symbol d), fruit 
+(symbol e), and water (symbol f). Consumption of food in 
+the size of one meal, foods that contain protein, 
+carbohydrates, vegetables, fruits, and vitamins and 
+minerals contained in a variety of foods. The data model is 
+displayed in Table 2.   
+TABLE II.  DATA MODEL  
+Com ponent  Formulation  
+Portion  Notation  
+Vegetable Protein  3 a 
+Animal Protein  3 b 
+Carbohydrate  8 c 
+Vegetable  5 d 
+Fruit  5 e 
+Water  8 f 
+One day consumption  24 (hours)  
+ 
+B. Optimization  
+Optimization is done by finding the best solution from 
+many alternatives. Optimization can produce more than 
+one solution.  
+C. Genetic Algorithm   
+Genetic Algorithms are used to solve combinatorial 
+optimization problems shown in Table 3.  
+ 
+ TABLE III.  DIMENSION OF GENETIC ALGORITHM   
+No Dimension  Technique  
+1 Problem  Data Model  
+Variable Chromosome  
+Coding Chromosome  
+2 Initialization  Initialization Chromosome  
+Evaluation  Objective Function  
+3 Selection  Probability Chromosome  
+Roulette Wheel Model  
+4 Crossover  Crossover Rate  
+5 Mutation  Mutation Rate  
+6 Iteration  Objective Function  
+7 Solution  Decoding Chromosome  
+ 
+Table 3 shows the computational process using a 
+Genetic Algorithm with 7 dimensions (Problems, 
+Initialization, Evaluation, Selection, Crossover, Mutation, 
+and Solution).  
+ 
+Step 1: Chromosome Variables  
+The variables  of chromosomes are shown in Table 4.  
+TABLE IV.  ELEMENT    
+Element  Notation  Description  
+Population Size  Pop. size  6 
+Random Number  R[i] [0..30]  
+Variable Chromosome  Chr[i]  a,b,c,d,e,f  
+Probability Crossover  Pc 50% or 0,5  
+Probability Mutation  Pm 5% or 0,05  
+Maximum Generation  Max-Gen 36 
+ 
+Step 2: Chromosome Initialization with the position of 
+Chr[i] generated by Random Number R[i]  
+𝐶ℎ𝑟[1]=[𝑎,𝑏,𝑐,𝑑,𝑒,𝑓]=[2,50;1,50;1,35;0,40;0,80;0,50] 
+𝐶ℎ𝑟[2]=[𝑎,𝑏,𝑐,𝑑,𝑒,𝑓]=[1,75;2,45;0,40;0,80;0,60;0,60] 
+𝐶ℎ𝑟[3]=[𝑎,𝑏,𝑐,𝑑,𝑒,𝑓]=[1,30;1,70;0,30;1,85;1,50;0,20] 
+𝐶ℎ𝑟[4]=[𝑎,𝑏,𝑐,𝑑,𝑒,𝑓]=[2,65;2,50;0,50;0,80;0,40;0,25] 
+𝐶ℎ𝑟[5]=[𝑎,𝑏,𝑐,𝑑,𝑒,𝑓]=[1,25;1,75;0,60;0,60;0,80;1,55] 
+𝐶ℎ𝑟[6]=[𝑎,𝑏,𝑐,𝑑,𝑒,𝑓]=[1,70;1,30;0,20;1,50;1,90;0,30] 
+ 
+Step 3: Chromosome Evaluation based on Objective 
+Function f[i]  
+ SolutionObjective Function =f[Chr]  
+𝐶ℎ𝑟[1]=𝐴𝑏𝑠 (3∗2,50+3∗1,50+
+8∗1,35+5∗0,40+
+5∗0,80+8∗0,50)−24=𝐴𝑏𝑠 (32,80)−24
+=8,80 
+𝐶ℎ𝑟[2]=𝐴𝑏𝑠 (3∗1,75+3∗2,45+
+8∗0,40+5∗0,80+
+5∗0,60+8∗0,60)−24=𝐴𝑏𝑠 (27,60)−24
+=3,60  
+ 
+1024        Adriyendi & Yeni Melia:   Optimization using Genetic Algorithm in Food Composition …    
+ 
+ 
+http://journals.uob.edu.bh  𝐶ℎ𝑟[3]=𝐴𝑏𝑠 (3∗1,30+3∗1,70+
+8∗0,30+5∗1,85+
+5∗1,50+8∗0,20)−24=𝐴𝑏𝑠 (29,75)−24
+=5,75 
+𝐶ℎ𝑟[4]=𝐴𝑏𝑠 (3∗2,65+3∗2,50+
+8∗0,50+5∗0,80+
+5∗0,40+8∗0,25)−24=𝐴𝑏𝑠 (27,45)−24
+=3,45 
+𝐶ℎ𝑟[5]=𝐴𝑏𝑠 (3∗1,25+3∗1,75+
+8∗0,60+5∗0,60+
+5∗0,80+8∗1,55)−24=𝐴𝑏𝑠 (33,20)−24
+=9,20 
+𝐶ℎ𝑟[6]=𝐴𝑏𝑠 (3∗1,70+3∗1,30+
+8∗0,20+5∗1,50+
+5∗1,90+8∗0,30)−24=𝐴𝑏𝑠 (30,00)−24
+=6,00 
+ Averagef [i] from Chr[i]  
+𝐴𝑣𝑔 →𝑓[0]→𝐶ℎ𝑟[𝑖]=8,80+3,60+5,75+3,45+9,20+6,00
+6
+=6,13 
+ 
+Step 4: Chromosome Selection based on Fitness Function 
+f[i] and P[i].  
+ 𝐹𝑖𝑡𝑛𝑒𝑠𝑠  𝐹𝑢𝑛𝑐𝑡𝑖𝑜𝑛 →𝑓[𝑖]=1
+(𝑓[𝑖]+1) 
+𝑓[1]=1
+(8,80+1)=1
+9,80=0,102041  
+𝑓[2]=1
+(3,60+1)=1
+4,60=0,217391  
+𝑓[3]=1
+(5,75+1)=1
+6,75=0,148148  
+𝑓[4]=1
+(3,45+1)=1
+4,45=0,224719  
+𝑓[5]=1
+(9,20+1)=1
+10,20=0,098039  
+𝑓[6]=1
+(6,00+1)=1
+7,00=0,142857  
+ 𝑇𝑜𝑡𝑎𝑙 =0,102041 +0,217391 +0,148148 +0,224719  
++0,098039 +0,142857 =0,933196  
+ 𝑃𝑟𝑜𝑏𝑎𝑏𝑖𝑙𝑖𝑡𝑦 →𝑃[𝑖]=𝑓[𝑖]
+𝑡𝑜𝑡𝑎𝑙𝑓 [𝑖] 
+𝑃[1]=0,102041
+0,933196=0,109346        𝑃[2]=0,217391
+0,933196=0,232954  
+𝑃[3]=0,148148
+0,933196=0,158754        𝑃[4]=0,224719
+0,933196=0,240806  
+𝑃[5]=0,098039
+0,933196=0,105058        𝑃[6]=0,142857
+0,933196=0,153084  
+ 𝑀𝑎𝑥 =0,240806  
+ 𝐶𝑢𝑚𝑢𝑙𝑎𝑡𝑖𝑣𝑒 →𝐶[𝑖] 
+𝐶[1]=0,109346  
+𝐶[2]=0,109346 +0,232954 =0,342299  
+𝐶[3]=0,109346 +0,232954  + 0,240806 =0,501053  
+𝐶[4]=0,109346 +0,232954  + 0,240806 +0,240806  
+=0,741859  
+     𝐶[5]=0,109346 +0,232954  + 0,240806  
+         +0,240806 +0,105058 =0,846916  
+     𝐶[6]=0,109346 +0,232954  + 0,240806 +0,240806  
+         +0,105058 +0,153084 =0,999997 →1,000000   Random Number R[i] based on Roulette Wheel Model 
+(generate a random number using Excel software)  
+ 𝑅[1]=0,740891  𝑛𝑒𝑎𝑟𝑏𝑦  𝐶[4]=0,741859 →𝐶ℎ𝑟[1]=𝐶ℎ𝑟[4] 
+ 𝑅[2]=0,855193  𝑛𝑒𝑎𝑟𝑏𝑦  𝐶[5]=0,846916 →𝐶ℎ𝑟[2]=𝐶ℎ𝑟[5] 
+ 𝑅[3]=0,999998  𝑛𝑒𝑎𝑟𝑏𝑦  𝐶[6]=0,999997 →𝐶ℎ𝑟[3]=𝐶ℎ𝑟[6] 
+ 𝑅[4]=0,119081  𝑛𝑒𝑎𝑟𝑏𝑦  𝐶[1]=0,109346 →𝐶ℎ𝑟[4]=𝐶ℎ𝑟[1] 
+ 𝑅[5]=0,342265  𝑛𝑒𝑎𝑟𝑏𝑦  𝐶[2]=0,342299 →𝐶ℎ𝑟[5]=𝐶ℎ𝑟[2] 
+ 𝑅[6]=0,501488  𝑛𝑒𝑎𝑟𝑏𝑦  𝐶[3]=0,501053 →𝐶ℎ𝑟[6]=𝐶ℎ𝑟[3] 
+𝐶ℎ𝑟[1]=𝐶ℎ𝑟[4]→[2,60;2,50;0,50;0,80;0,40;0,25] 
+𝐶ℎ𝑟[2]=𝐶ℎ𝑟[5]→[1,25;1,75;0,60;0,60;0,80;1,55] 
+𝐶ℎ𝑟[3]=𝐶ℎ𝑟[6]→[1,70;1,30;0,20;1,50;1,90;0,30] 
+𝐶ℎ𝑟[4]=𝐶ℎ𝑟[1]→[2,50;1,50;1,35;0,40;0,80;0,50] 
+𝐶ℎ𝑟[5]=𝐶ℎ𝑟[2]→[1,75;2,45;0,40;0,80;0,60;0,60] 
+𝐶ℎ𝑟[6]=𝐶ℎ𝑟[3]→[1,30;1,70;0,30;1,85;1,50;0,20] 
+ 
+Step 5: Crossover based on Probability level 𝑃𝑐→50% =
+0,500000  
+ 𝑅[𝑖]   𝑃𝑐[𝑖] 
+        𝑅[1]=0,476543  𝑃𝑐[1]=0,500000  
+        𝑅[2]=0,524538  𝑃𝑐[2]=0,500000  
+        𝑅[3]=0,489123  𝑃𝑐[3]=0,500000  
+        𝑅[4]=0,515263  𝑃𝑐[4]=0,500000  
+        𝑅[5]=0,496175  𝑃𝑐[5]=0,500000  
+        𝑅[6]=0,537852  𝑃𝑐[6]=0,500000  
+ 
+ Compare 𝑅[𝑖] 𝑤𝑖𝑡ℎ 𝑃𝑐[𝑖] 
+        𝑅[1]<𝑃𝑐[1]→𝑅[1]  𝑅[2]>𝑃𝑐[2] 
+        𝑅[3]<𝑃𝑐[3]→𝑅[3]  𝑅[4]>𝑃𝑐[4] 
+        𝑅[5]<𝑃𝑐[5]→𝑅[5]  𝑅[6]>𝑃𝑐[6] 
+ Determine parent by choice value  𝑅[𝑖]<𝑃𝑐[𝑖] 
+𝑅[1]→𝑝𝑎𝑟𝑒𝑛𝑡  𝑅[3]→𝑝𝑎𝑟𝑒𝑛𝑡𝑅 [5]→𝑝𝑎𝑟𝑒𝑛𝑡               
+𝑃𝑐=50% ∗𝑁𝑢𝑚𝑏𝑒𝑟  𝑜𝑓 𝐺𝑒𝑛𝑒𝑠 =50% ∗6=3 
+ The cut point position uses a random number based on 
+the number of the chromosome, in this case, means 
+there are 3 chromosomes (range 1 -3).  
+ 𝐶ℎ𝑟[1]><𝐶ℎ𝑟[3] 𝑤𝑖𝑡ℎ 𝐶[1]=2  (the position of the 
+2nd gen on  Chr[3] exchange with Chr [1])  
+𝐶ℎ𝑟[1]><𝐶ℎ𝑟[3]→[2,65;2,50;0,50;0,80;0,40;0,25] 
+             𝑒𝑥𝑐ℎ𝑎𝑛𝑔𝑒  𝑤𝑖𝑡ℎ [1,70;1,30;0,20;1,50;1,90;0,30] 
+                            𝑜𝑢𝑡𝑝𝑢𝑡 [1,70;2,50;0,20;1,50;1,90;0,30] 
+ 
+ 𝐶ℎ𝑟[3]><𝐶ℎ𝑟[5] 𝑤𝑖𝑡ℎ 𝐶[2]=2  (the position of the 
+2nd gen on    Chr [2] exchange with Chr  [5]) 
+𝐶ℎ𝑟[3]><𝐶ℎ𝑟[5]→[1,70;1,30;0,20;1,50;1,90;0,30] 
+             𝑒𝑥𝑐ℎ𝑎𝑛𝑔𝑒  𝑤𝑖𝑡ℎ [1,70;2,45;0,40;0,80;0,60;0,60] 
+                            𝑜𝑢𝑡𝑝𝑢𝑡 [1,75;1,30;0,40;0,80;0,60;0,60] 
+ 
+ 𝐶ℎ𝑟[5]><𝐶ℎ𝑟[1] 𝑤𝑖𝑡ℎ 𝐶[3]=2  (the position of the 
+2nd gen on  C hr [1] exchange with Chr [3])  
+𝐶ℎ𝑟[5]><𝐶ℎ𝑟[1]→[1,75;2,45;0,40;0,80;0,60;0,60] 
+             𝑒𝑥𝑐ℎ𝑎𝑛𝑔𝑒  𝑤𝑖𝑡ℎ [2,65;2,50;0,50;0,80;0,40;0,25] 
+                            𝑜𝑢𝑡𝑝𝑢𝑡 [2,65;2,45;0,50;0,80;0,40;0,25] 
+ Determine the Offspring ( red font in box )                                                          
+ 
+Step 6: Mutation based on the level of probability of 
+mutation  𝑃𝑚 =5% =0.05 
+ 𝑇𝑜𝑡𝑎𝑙 =𝑁𝑢𝑚𝑏𝑒𝑟  𝑜𝑓 𝐺𝑒𝑛𝑒𝑠 ∗𝑃𝑜𝑝𝑢𝑙𝑎𝑡𝑖𝑜𝑛 =6∗6=36  
+ 𝑀𝑢𝑡𝑎𝑡𝑖𝑜𝑛 =5% ∗𝑇𝑜𝑡𝑎𝑙 =0.05∗36=1,8=2 (𝑟𝑜𝑢𝑛𝑑𝑒𝑑  𝑜𝑓) 
+ 𝑅[𝑖]=[0..35]  
+ 
+ Int. J. Com. Dig. Sys. 10, No.1, 1019 -1029  (Oct.-2021)                         1025  
+ 
+ 
+http://journals.uob.edu.bh   Gen position exchanged with R[i]  the position of 
+selected genes by mutation  
+Selected = Chr[4] gen at the 3rd position   
+Selected = Chr[6] gen at the 4th position  
+ Before Mutation (a red font in the box)  
+       𝐶ℎ𝑟[1]=[1,70;2,50;0,20;1,50;1,90;0,30] 
+ 𝐶ℎ𝑟[2]=[1,25;1,75;0,60;0,60;0,80;1,55] 
+ 𝐶ℎ𝑟[3]=[1,75;1,30;0,40;0,80;0,60;0,60] 
+𝐶ℎ𝑟[4]=[2,50;1,50;1,35;0,40;0,80;0,50] 3rd position  
+       𝐶ℎ𝑟[5]=[1,30;1,75;0,60;0,60;0,80;1,55] 
+𝐶ℎ𝑟[6]=[1,30;1,70;0,30;1,85;1,50;0,20]4th position  
+ After Mutation (a red font in the box)  
+ 𝐶ℎ𝑟[1]=[1,70;2,50;0,20;1,50;1,90;0,30] 
+ 𝐶ℎ𝑟[2]=[1,25;1,75;0,60;0,60;0,80;1,55] 
+ 𝐶ℎ𝑟[3]=[1,75;1,30;0,40;0,80;0,60;0,60] 
+ 𝐶ℎ𝑟[4]=[2,50;1,50;0,25;0,40;0,80;0,50]3rd position  
+ 𝐶ℎ𝑟[5]=[1,30;1,75;0,60;0,60;0,80;1,55] 
+        𝐶ℎ𝑟[6]=[1,30;1,70;0,30;0,70;1,50;0,20]4th position  
+ 
+Step 7: Solution Chr[i]  
+ 𝐶ℎ𝑟[𝑖]→𝑓[𝑖]→𝐶ℎ𝑟[𝑖] 
+𝐶ℎ𝑟[1]=𝐴𝑏𝑠 (3∗1,70+3∗2,50+
+8∗0,20+5∗1,50+
+5∗1,90+8∗0,30)−24=𝐴𝑏𝑠 (28,60)−24
+=4,60 
+𝐶ℎ𝑟[2]=𝐴𝑏𝑠 (3∗1,25+3∗1,75+
+8∗0,60+5∗0,60+
+5∗0,80+8∗1,55)−24=𝐴𝑏𝑠 (33,20)−24
+=9,20 
+𝐶ℎ𝑟[3]=𝐴𝑏𝑠 (3∗1,75+3∗1,30+
+8∗0,40+5∗0,80+
+5∗0,60+8∗0,60)−24=𝐴𝑏𝑠 (24,15)−24
+=0,15 
+𝐶ℎ𝑟[4]=𝐴𝑏𝑠 (3∗2,50+3∗1,50+
+8∗0,25+5∗0,40+
+5∗0,80+8∗0,50)−24=𝐴𝑏𝑠 (24)−24=0 
+𝐶ℎ𝑟[5]=𝐴𝑏𝑠 (3∗1,30+3∗1,75+
+8∗0,60+5∗0,60+
+5∗0,80+8∗1,55)−24=𝐴𝑏𝑠 (29,35)−24
+=5,35 
+𝐶ℎ𝑟[6]=𝐴𝑏𝑠 (3∗1,30+3∗1,70+
+8∗0,30+5∗0,70+
+5∗1,50+8∗0,20)−24=𝐴𝑏𝑠 (24)−24=0 
+ 
+ 𝐴𝑣𝑒𝑟𝑎𝑔𝑒 →𝑓(1) 
+𝐶ℎ𝑟[𝑖]=4,60+9,20+0,15+0+5,35+0
+6=3,22 
+ 
+ 𝐶𝑜𝑚𝑝𝑎𝑟𝑒 →𝑓(0):𝑓(1)=6,13:3,22→𝑓(1)<𝑓(0) 
+There is an increase in genes. The test was performed 
+again with the decoding process if the best 
+combination has been obtained, then the iteration is 
+stopped. Return to step Chromos omes Variables to 
+Mutation until the maximum generation is reached (in 
+this case, the solution has been obtained).  
+D. Food Composition  
+Food composition, food sources, food variation, 
+portions of daily consumption, and size of one meal for 
+daily consumption a re shown in Table 5.  
+ 
+ TABLE V.  FOOD COMPOSITION     
+Compo
+nent  Alternative 
+1 Alternative 
+2 Alternative 
+3 Alternative 
+4 
+Vege  
+table  
+Protein  2,5 
+tablespoons  
+soybeans 
+(25g)  2 medium 
+slice 
+Tempe 
+(50g)  2 large slice  
+Oncom 
+(50g)  1 large slice  
+tofu (100g)  
+Animal 
+Protein  2 medium 
+pieces  
+anchovy 
+(25g)  2 pieces 
+chicken  
+eggs (60g)  1 medium 
+piece  
+beef (50g)  1glass  milk  
+(200g)  
+Carbo  
+Hydrate  1 medium 
+slice 
+cassava 
+(200g)  4 slice white  
+bread (80g)  0,75 cup  
+rice 
+(100g)  1 large seed  
+taro (200g)  
+Vege 
+table  yam leaves  
+(100g)  spinach  
+(100g)  tomato  
+(100g)  cabbage  
+(100g)  
+Fruit  0,5 pieces 
+mango  
+(50g)  2 pieces 
+orange  
+(100g)  1 medium 
+slice 
+papaya 
+(100g)  8 pieces 
+rambutan  
+(50g)  
+Water  2 glasses of  
+water  2 glasses of  
+water  2 glasses of  
+water  2 glasses of  
+water  
+ 
+E. Solution  
+Solution based on initialization, selection, crossover, 
+mutation, and solution is shown in Table 6.  
+TABLE VI.  INITIALIZATION      
+Chr[i]  3a 3b 8c 5d 5e 8f 
+[1] 2,50 1,50 1,35 0,40 0,80 0,50 
+[2] 1,75 2,45 0,40 0,80 0,60 0,60 
+[3] 1,30 1,70 0,30 1,85 1,50 0,20 
+[4] 2,65 2,50 0,50 0,80 0,40 0,25 
+[5] 1,25 1,75 0,60 0,60 1,80 0,55 
+[6] 1,70 1,30 0,20 1,50 1,90 0,30 
+ 
+Table 6 presents initialization with chromosome regulation and gene 
+position in the initial population.  
+TABLE VII.  SELECTION      
+Chr[i]  3a 3b 8c 5d 5e 8f 
+[1] 2,65 2,50 0,50 0,80 0,40 0,25 
+[2] 1,25 1,75 0,60 0,60 0,80 1,55 
+[3] 1,70 1,30 0,20 1,50 1,90 0,30 
+[4] 2,50 1,50 1,35 0,40 0,80 0,50 
+[5] 1,75 2,45 0,40 0,80 0,60 0,60 
+[6] 1,30 1,70 0,30 1,85 1,50 0,20 
+ 
+Table 7 presents the selection by chromosome arrangement and gene 
+position. All genes changes (blocks).  
+  
+ 
+1026        Adriyendi & Yeni Melia:   Optimization using Genetic Algorithm in Food Composition …    
+ 
+ 
+http://journals.uob.edu.bh  TABLE VIII.  CROSSOVER      
+Chr[i]  3a 3b 8c 5d 5e 8f 
+[1] 1,75 2,50 0,20 1,50 1,90 0,30 
+[2] 1,25 1,75 0,60 0,60 0,80 1,55 
+[3] 1,75 1,30 0,40 0,80 0,60 0,60 
+[4] 2,50 1,50 1,35 0,40 0,80 0,50 
+[5] 1,30 1,75 0,60 0,60 0,80 1,55 
+[6] 1,30 1,70 0,30 1,85 1,50 0,20 
+Crossover Chr[1], Chr[3], Chr[5]  
+ 
+Table 8 shows crossovers with chromosome arrangement 
+and changes in gene position (blocks). On chromosome 5, 
+5 gene positions are similar to the initialization process.  
+TABLE IX.  MUTATION       
+Chr[i]  3a 3b 8c 5d 5e 8f 
+[1] 1,75 2,50 0,20 1,50 1,90 0,30 
+[2] 1,25 1,75 0,60 0,60 0,80 1,55 
+[3] 1,75 1,30 0,40 0,80 0,60 0,60 
+[4] 2,50 1,50 1,35 0,40 0,80 0,50 
+[5] 1,30 1,75 0,60 0,60 0,80 1,55 
+[6] 1,30 1,70 0,30 1,85 1,50 0,20 
+Mutation Chr[4] Gen 3, Chr[6], Gen 4  
+ 
+Table 9 presents mutations in the order of the 
+chromosomes arrangement and the position of the altered 
+gene (blocks). At position 5, the genes are the same as the 
+initialization process. On chromosome 4, gen 3 (light blue 
+block) mutations are performed.  
+TABLE X.  SOLUTION       
+Chr[i]  3a 3b 8c 5d 5e 8f 
+[1] 1,75 2,50 0,20 1,50 1,90 0,30 
+[2] 1,25 1,75 0,60 0,60 0,80 1,55 
+[3] 1,75 1,30 0,40 0,80 0,60 0,60 
+[4] 2,50 1,50 0,25 0,40 0,80 0,50 
+[5] 1,30 1,75 0,60 0,60 0,80 1,55 
+[6] 1,30 1,70 0,30 0,70 1,50 0,20 
+ 
+Table 10 presents solutions to the regulation of 
+chromosomes and the position of altered genes (blocks). 
+On chromosome 5,  5  gene positions are similar to the 
+initialization process. On chromosome 4, gen 3 (light blue 
+block), and chromosome 6 gen 4 (light blue block) is the 
+result of mutation:   
+𝐶ℎ𝑟(1)=[3𝑎+3𝑏+8𝑐+5𝑑+5𝑒+8𝑓]−24→28,60−24=4,6 
+𝐶ℎ𝑟(2)=[3𝑎+3𝑏+8𝑐+5𝑑+5𝑒+8𝑓]−24→33,20−24=9,2 
+𝐶ℎ𝑟(3)=[3𝑎+3𝑏+8𝑐+5𝑑+5𝑒+8𝑓]−24→24,15−24=0,15 
+ 
+𝐶ℎ𝑟(4)=[3𝑎+3𝑏+8𝑐+5𝑑+5𝑒+8𝑓]−24→24−24=0 
+𝐶ℎ𝑟[4]=𝑜𝑝𝑡𝑖𝑚𝑎𝑙 →𝑆𝑜𝑙𝑢𝑡𝑖𝑜𝑛  1 
+ 
+𝐶ℎ𝑟(5)=[3𝑎+3𝑏+8𝑐+5𝑑+5𝑒+8𝑓]−24→29,35−24=5,35 
+𝐶ℎ𝑟(6)=[3𝑎+3𝑏+8𝑐+5𝑑+5𝑒+8𝑓]−24→24−24=0 
+𝐶ℎ𝑟[6]=𝑜𝑝𝑡𝑖𝑚𝑎𝑙 →𝑆𝑜𝑙𝑢𝑡𝑖𝑜𝑛  2 
+ 
+Decoding Solution 1  
+(3∗2,50+3∗1,50+8∗0,25+5∗0,40+5∗0,80+8∗0,50) 
+                   =7,50+4,50+2,00+2,00+4,00+4,00=24 
+ 
+Decoding Solution 2  
+(3∗1,30+3∗1,70+8∗0,30+5∗0,70+5∗1,50+8∗0,20) 
+                   =3,90+5,10+2,40+3,50+7,50+1,60=24  
+TABLE XI.  FORMULATION AND DECODING       
+Compo  
+nent  Formulation  Solution 1  Solution 2  
+Portion  Notation  Decoding 1  Decoding 2  
+Vegetable 
+Protein  3 a 2,50 1,30 
+Animal 
+Protein  3 b 1,50 1,70 
+Carbo  
+hydrate  8 c 0,25 0,30 
+Vegetable  5 d 0,40 0,70 
+Fruit  5 e 0,80 1,50 
+Water  8 f 0,50 0,20 
+ 
+Table 11 presents the formula and decoding of food 
+composition based on solution 1 and solution 2.  
+ 
+ 
+Figure 6. Graphic of initialization  
+ 
+Figure 6 shows the initialization graph based on 
+percentages and composition. The consumption for 
+vegetable protein (3a) is 36%, consumption of animal 
+protein (3b) is 21%, carbohydrate consumption (8c) is 
+19%, vegetable consumption (5d) is 6%, fruit 
+consumption (5e) is 11%, and water consumption (8f) is 
+7%. 
+ 
+ 
+ 
+ 
+ Int. J. Com. Dig. Sys. 10, No.1, 1019 -1029  (Oct.-2021)                         1027  
+ 
+ 
+http://journals.uob.edu.bh  Figure 7 shows a choice gra ph based on percentage and 
+food composition. The consumption for vegetable protein 
+(3a) is 37%, consumption of animal protein (3b) is 35%, 
+carbohydrate consumption (8c) is 7%, vegetable 
+consumption (5d) is 11%, fruit consumption (5e) is 6%, 
+and water consu mption (8e) is 4%.  
+ 
+ 
+Figure 7. Graphic of selection  
+ 
+Figure 8 shows a crossover chart based on food 
+percentages and composition. The consumption for 
+vegetable protein (3a) is 22%, consumption of animal 
+protein (3b) is 31%, carbohydrate consumption (8c) is  2%, 
+vegetable consumption (5d) is 18%, fruit consumption (5e) 
+is 23%, and water consumption (5f) is 4%.  The percentage 
+of the crossover is the same as the percentage of mutation.  
+ 
+Figure 8. Graphic of crossover  
+ 
+ 
+Figure 9. Graphic of comparison  Figure 9 shows the comparison of solution 1 and solution 
+2, food composition and portions in one meal for one -day 
+consumption. Based on Solution 1, vegetable protein (3a = 
+2.5), animal protein (3b = 1.5), carbohydrate (8c =  0.25), 
+vegetable (5d = 0.4), fr uit (5e = 0.8), and water (8f = 0.5) 
+to achieve balanced nutrition in food consumption. Based 
+on Solution 2, vegetable protein (3a = 1.3), animal protein 
+(3b = 1.7), carbohydrate (8c =  0.3), vegetable (5d = 0.7), 
+fruit (5e = 1.5), and water (8f = 0.2) to achieve balanced 
+nutrition in food consumption. Solution 1 and Solution 2  
+can be recommendation for the society where most of the 
+peoples are unable to take a healthy diet and apply to 
+Indonesian people in normal condition (peoples can 
+choose Solution 1 o r Solution 2 based on their condition).  
+TABLE XII.  FOOD MODEL  
+Food Nutrition  Food Menu  
+ Health 4  
+Perfect 5 Pattern  Balanced 
+Nutrition  Health 4  
+Perfect 5 
+Pattern  Balanced 
+Nutrition  
+Carbohydrate  Vegetable 
+Protein  Staple Food  Carbohydrate  
+Fat & Protein  Animal 
+Protein  Meat or Fish  Protein  
+Vegetable  Carbohydrate  Vegetable  Fat 
+Fruit  Vegetable  Fruit  Vitamin & 
+Mineral  
+Milk (Protein  
+& Mineral)  Fruit  Milk  Fiber  
+Food Composition  Meal Time  
+Health 4 Perfect 
+5 Pattern  Balanced 
+Nutrition  Health 4 Perfect 
+5 Pattern  Balanced 
+Nutrition  
+- 50% 
+Carbohydrate  Breakfast  
+(05.00 – 09.00)  Breakfast  
+(05.00 – 
+09.00)  
+- 30% Fat  Lunch  
+(12.00 – 13.00)  Morning  
+Interlude  
+(10.00)  
+- 15% Protein  Dinner  
+(19.00 – 20.00)  Lunch  
+(12.00 – 
+13.00)  
+- 5% Vitamin & 
+Mineral   Afternoon 
+Interlude  
+(15.00 – 
+16.00)  
+ Dinner  
+(19.00 – 
+20.00)  
+ 
+Table 12 shows food nutrition, diet, food composition, and 
+meal  times as food models. The main components of food 
+nutrients are carbohydrates, protein, vegetables, and fruits. 
+The main components of food diets are carbohydrates, 
+protein, fiber, vitamins, minerals, and water.  The main 
+components of food compositions ar e carbohydrates, fats, 
+protein, vitamins, and minerals. The main components of 
+mealtimes are breakfast, lunch, and dinner.  
+ 
+TABLE XIII.  CONSUMPTION MODEL  
+ 
+ 
+1028        Adriyendi & Yeni Melia:   Optimization using Genetic Algorithm in Food Composition …    
+ 
+ 
+http://journals.uob.edu.bh  Compone
+nt Formulation  Solution 1  Solution 2  
+ Portion  Notation  Decoding 1  Decoding 2  
+Vegetable 
+Protein  3 a 2,50 1,30 
+Solution 1 = 3 x consumption for vegetable protein @2,50 servings  
+Solution 2 = 3 x consumption for vegetable protein @1,30 servings  
+Animal 
+Protein  3 b 1,50 1,70 
+Solution 1 = 3 x consumption for animal protein @1,50 servings  
+Solution 2 = 3 x consumption for animal protein @1,70 servings  
+Carbohydr
+ate 8 c 0,25 0,30 
+Solution 1 = 8 x consumption for carbohydrate @0,25 servings  
+Solution 2 = 8 x consumption for carbohydrate @0,30 servings  
+Vegetable  5 d 0,40 0,70 
+Solution 1 = 5 x consumption for  vegetable @0,40 servings  
+Solution 2 = 5 x consumption for vegetable @0,70 servings  
+Fruit  5 e 0,80 1,50 
+Solution 1 = 5 x consumption for fruit @0,80 servings  
+Solution 2 = 5 x consumption for fruit @1,50 servings  
+Water  8 f 0,50 0,20 
+Solution 1 = 8 x consumption for water @0,50 servings  
+Solution 2 = 8 x consumption for water @0,20 servings  
+ 
+TABLE XIV.  COMPOSITION MODEL       
+Consumption  Time & Portion 
+(p) Initialization  Mutation  
+3 x  
+Vegetable 
+Protein  Breakfast (1p)  
+Lunch (1p)  
+Dinner (1p)  36% 
+Vegetable 
+Protein  22% 
+Vegetable 
+Protein  
+3 x  
+Animal 
+Protein  Breakfast (1p)  
+Lunch (1p)  
+Dinner (1p)  21% Animal 
+Protein  31% Animal 
+Protein  
+8 x  
+Carbohydrate  Breakfast (2p)  
+Morning Snack 
+(1p) 
+Lunch (2p)  
+Afternoon  
+Snack (1p)  
+2 x Dinner (2p)  19% 
+Carbohydrate  2% 
+Carbohydrate  
+5 x  
+Vegetable  Breakfast (1p)  
+Morning Snack 
+(1p) Lunch (1p)  
+Afternoon Snack 
+(1p) 
+Dinner (1p)  6% Vegetable  18% 
+Vegetable  
+5 x  
+Fruit  Breakfast (1p)  
+Morning Snack 
+(1p) Lunch (1p)  
+Afternoon Snack 
+(1p) 
+Dinner (1p)  11% Fruit  23% Fruit  
+8 x  
+Water  Breakfast (2p)  
+Morning Snack 
+(1p) 
+Lunch (2p)  
+Afternoon Snack 
+(1p) 
+Dinner (2p)  7% Water  4% Water  
+ 
+Table 13 shows the application of solution 1 and solution 
+2 for consumption per day and Solution 1 and Solution 2 with 3 meals for daily consumption (morning, afternoon, 
+and night) and mini -meal or snack consumption based on 
+food consumption in Table 5.  
+ 
+Table 14 shows the composition and combination of daily 
+food consumption. The consumption pattern is with 3 -3-8-
+5-5-8 pattern (3 x consumption for vegetable protein, 3 x 
+consumption for animal protein, 8 x consumption for 
+carbohydrate, 5 x consumption for vegetables, 5 x 
+consumption for fruit, and 8 x water consumption) based 
+on food consumption in Table 5. The regula r meal -times 
+are breakfast, morning mini -meal or snack, lunch, 
+afternoon mini -meal or snack, and dinner. This pattern 
+applies to initialization (initial state) and mutation (final 
+state). This pattern yields outputs, namely: Consumption 
+Model, Food Model, and Composition Model.  
+ 
+5. CONCLUSION  
+Optimization using the Genetic Algorithm on Food 
+Composition can be performed and can produce a 
+combination with two solutions , namely optimal solution 
+as a combination of food component that can meet daily 
+food needs, c onsisting of the right menu, nutrition, time, 
+composition with the computational process . In this  
+computational process for the Genetic Algorithm , the 
+mutation rate is 50%, the crossover rate  is 5%, the 
+maximum generate is 36, the maximum fitness point is 
+0.240806, and the population size is 6. This Genetic 
+Algorithm used genotype 1 variable s (integer), 
+initialization (random value /random number ), evaluation 
+(objective function  is convert ed to fitness point function), 
+selection (roulette whee  model ), geneti c operator ( the real 
+value  of recombination), crossover (binary value  of 
+recombination), and mutation (real value). The optimal 
+from this research implemented in the form of 3 models: 
+the Consumption Model, the Food Model, and the 
+Composition Model. The re sulting model has a large 
+impact on food composition patterns  with an optimal 
+composition  of the main food in improving health and 
+minimizing malnutrition in Indonesia . In future work, 
+subsequent research will be o ptimization using Particle 
+Swarm Optimizat ion (PSO more stable for the result of the 
+fitness) for alternative food compositions . 
+ 
+REFERENCES  
+ 
+[1] M. Munirah and Subanar, “Survey of optimization methods,” 
+JUITA, vol. 5, no. 1, pp. 45 -50, 2017.  
+[2] A. N. Fauziyah and W. F. Mahmudy, “Optimization of food 
+composition for a hypertensive patient using variable neighborhood 
+search ,” IJEECS, vol. 8, no. 2, pp. 327 -306, 2017.  
+[3] Ministry of Health RI and World Food Programme, Balanced 
+Nutrition: Nutrition Guide for Healthy Life, 2014.  
+[4] N. Zuliyana, J. E. Suseno, and K.  Adi, “The decision support 
+system applied to the determination of diabetes mellitus patient  
+ 
+ Int. J. Com. Dig. Sys. 10, No.1, 1019 -1029  (Oct.-2021)                         1029  
+ 
+ 
+http://journals.uob.edu.bh  
+using a genetic algorithm method,” E3S W.O.C (ICENIS ‘17), pp. 
+1-10, 2018.  
+[5] R. A. Permata, D. Triyanto, and Ilhamsyah. “Application of daily 
+menu preventative for hypercholesterolemia using the genetic 
+algorithm,” Journal Coding of Computer System, vol. 4, no. 2, pp. 
+96-106, 2016.  
+[6] Maryamah, R. R. M. Putri, and S. A. Wicaksono, ”Optimization of 
+food composition for patient diabetes mellitus and its complication 
+using  the genetic algorithm,” Journal of Development of 
+Information Technology and Computer Science, vol. 1, no. 4, pp. 
+270-281, 2017.  
+[7] R. R. A. Putri, M. T. Furqon and R. C. Wihandika, “Optimization 
+of Food Composition for a hypertensive patient using the adap tive 
+genetic algorithm,” Journal of Development of Information 
+Technology and Computer Science, vol. 2, no. 2, pp. 515 -522, 
+2018.  
+[8] N. D. Asri, I. Cholissodin and D. E. Ratnawati, “Optimization of 
+food consumption for hypertension pregnant women using the 
+genetic algorithm,” Journal of Development of Information 
+Technology and Computer Science, vol. 2, no. 9, pp. 2892 -2901, 
+2018.  
+[9] B. Qamariyah and T. S. Nindya, “Correlation between energy 
+intake, macronutrient, and total energy expenditure and nutritional 
+status of elementary students,” Amerta Nutr., vol. 2, no. 1, pp. 59 -
+65, 2018.  
+[10] P. A. Pratama, E. Zulkarnain and M. Ririanty, “The effectiveness 
+of media promotion “My Dishes” balanced nutrition guidelines as a 
+guide once packed,” Journal Reference of Healthy, vol. 6, no. 1, pp. 
+53-59, 2017.  
+[11] F. Perdana, S. Madanijah and I. Ekayanti, ”The development of 
+nutrition education media based on Android and website and the 
+effect on behavior about balanced nutrition in primary school 
+students,” Journal of Food Nutrition,  vol. 12, no. 3, pp. 168 -178, 
+2017.  
+[12] E. E. Pratiwi, A. W. Widodo, and W. F. Mahmudy, 
+“Implementation genetic algorithm for determining seed and 
+fertilizer even distribution,”  Journal of Development of 
+Information Technology and Computer Science, vol. 2, no . 5, pp. 
+1803 -1812,  
+[13] I. P. Ogunntuyi, and J. C. Nwaiwu, “Solving school bus routing 
+problem using genetic algorithm -based model,” International 
+Journal Intelligent System and Applications (IJISA MECS 
+Publisher), vol. 10, no. 3, pp. 50 -58, 2018.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Adriyendi received a Master’s degree 
+in Computer Science from UPI YPTK 
+Padang, Indonesia in 2009. Currently, 
+he is a lecturer at UPI YPTK Padang 
+and IAIN Batusangkar, Indonesia. His 
+research interests include artificial 
+intelligence, machine learn ing, decision 
+support systems, big data system, 
+healthcare informatics, food science, s 
+data mining, data science, and 
+information engineering.  
+ 
+Yeni Melia received the S.E degree 
+in Accounting in 2007 and M.M in 
+Management in 2013 from UPI 
+YPTK Padang, I ndonesia. He is 
+currently working as Lecturer in IAIN 
+Batusangkar. His research interest 
+includes Accounting, Finance, 
+Business, Management, Economy, 
+Home Industry, and Digital 
+Marketing.  
+ 
+ 
+ 
+ 
+View publication stats

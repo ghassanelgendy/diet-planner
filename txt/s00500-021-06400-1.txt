@@ -1,0 +1,1874 @@
+APPLICATION OF SOFT COMPUTING
+Automated and personalized meal plan generation and relevance
+scoring using a multi-factor adaptation of the transportation problem
+George Salloum1•Joe Tekli1
+Accepted: 4 October 2021 / Published online: 10 November 2021
+/C211The Author(s), under exclusive licence to Springer-Verlag GmbH Germany, part of Springer Nature 2021
+Abstract
+Establishing a healthy lifestyle has become a very important aspect in people’s lives. The latter requires maintaining ahealthy nutrition by considering the nature and quantity of foods being consumed, allowing to regulate one’s intake and
+consumption of calories and nutrients. As a result, people reach out for nutrition experts which services are costly, time-
+consuming, and not readily available. While various e-solutions have been developed to perform meal planning, yet mostof them lack a completely automated process and require domain expert intervention at different stages of the recom-
+mendation process (e.g., identifying macronutrient distribution, providing pre-deﬁned meal plans, or combining recom-
+mended foods into meal structures). In addition, most solutions focus on fulﬁlling the patients’ nutrition requirements (interms of caloric intake and macronutrients) while disregarding other relevant factors such as patient food preferences, food
+variety, food-meal compatibility, and inter-food compatibility. Hence, there is a need for an automated solution to produce
+a full-ﬂedged meal plan from scratch, based on a recommended caloric intake and considering multiple factors. In thisstudy, we introduce a novel solution titled MPG for automated Meal Plan Generation recommendations, designed based on
+an adaptation of the transportation optimization problem to simulate the ‘‘human thought process’’ involved in generating
+daily meal plans. MPG allows to: (i) generate plans which fulﬁll a recommended caloric intake, given a set of available
+foods, while (ii) personalizing the plans following patient chosen factors (e.g., food preferences, variety, and compati-
+bility), and (iii) evaluating the relevance of the produced plans following patient preferences. We have conducted various
+experiments involving 9 human testers and 124 meal plans to test the performance of MPG. Results highlight MPG’seffectiveness in producing ‘‘healthy’’ and personalized meal plans while complying with the testers’ preferences.
+Keywords Personalized meal planning /C1Nutrition health /C1Adapted transportation problem /C1Relevance scoring /C1
+Parametric model
+1 Introduction
+Nowadays, establishing a healthy lifestyle has become a
+very important aspect in people’s lives. The latter requires
+maintaining a healthy nutrition by considering the natureand quantity of foods being consumed, allowing to regulate
+one’s intake and consumption of calories and nutrients.
+Poor nutrition has been shown to increase the risks ofdangerous complications such as obesity, diabetes, andother health issues (Ayoub et al .2015 , Mattar et al. 2015 ).
+As a result, people reach out for nutrition experts to helpthem achieve healthy lifestyles. In this context, a few
+obstacles come to play: (i) the cost of seeking an expert’s
+help which is recurring and non-trivial, (ii) the need toregularly meet with the expert which might not be always
+practical, and (iii) the need for readily accessible health
+services which might be difﬁcult to provide by a humanexpert. An alternative popular approach is the use of
+electronic solutions, such as mobile applications and
+websites that are highly available and provide basic healthand nutrition services (cf. literature review in Sect. 3). Yet
+most of these solutions share major weaknesses, namely:
+(i) lack of a complete automated process either requiringexpert intervention, e.g., (Khan and Hoffmann 2003a ,b,
+&Joe Tekli
+joe.tekli@lau.edu.lb
+1E.C.E. Department, School of Engineering, Lebanese
+American University (LAU), Byblos Campus, 36, Byblos,Lebanon
+123Soft Computing (2022) 26:2561–2585
+https://doi.org/10.1007/s00500-021-06400-1 (0123456789().,-volV) (0123456789(). ,- volV)Suksom and Buranarach 2010 ), or requiring the patient
+(user) to have some technical knowledge about nutrition
+health in order to utilize (and tune the parameters of) the
+e-solution, e.g., (Evans 2017 , Livestrong Foundation
+2020 ), (iii) performing meal planning or meal plan evalu-
+ation based on a combination of pre-ﬁxed plans or pre-
+deﬁned inputs set by the e-solution designer, e.g., (Khanand Hoffmann 2003a ,2003b , Suksom and Buranarach
+2010 ), and (iii) allowing limited adaptability to the
+patient’s preferences in terms of food afﬁnity, variety, and
+compatibility, e.g., (MakeMyPlate Inc. 2020a ,band c,
+Noor et al .2018 , Petot et al. 1998 ). Hence, there is a need
+for an automated solution to produce a full-ﬂedged meal
+plan from scratch, based on a recommended caloric intake
+and considering multiple patient preference factors.
+The main goal of this study is to create an intelligent
+agent that offers the same meal planning services offered
+by a human nutrition expert albeit doing it through areadily available, fully automated, and cheap e-solution.
+We aim to automate the process of producing personalized
+meal plans allowing patients to reach their target weightand BFP,
+1while closely catering to their preferences. To
+achieve the latter services, we introduce a new solution for
+automated Meal Plan Generation titled MPG , designed
+based on an adaptation of the transportation optimization
+problem to simulate the ‘‘human thought process’’ involved
+in generating daily meal plans. MPG allows to: (i) generate
+meal plans which fulﬁl a recommended caloric intake (e.g.,
+nutrition demand) given a set of available foods (e.g.,
+nutrition supply), while (ii) personalizing the plans fol-lowing patient chosen factors (e.g., assigning different
+weights for food preferences, variety, and compatibility),
+and (iii) evaluating their relevance following the patients’preferences. It consists of ﬁve main components:
+(i)macronutrients calculator : computes the amount of
+macronutrients (i.e., carbohydrates, protein, and fat) tofulﬁl the required caloric intake, (ii) servings calculator :
+computes the daily amount of servings for each of the six
+primary food categories (i.e., starch, fruits, milk, vegeta-bles, lean meat, and fats) to fulﬁl the required macronu-
+trients, (iii) servings assignor : splits the servings for each
+of the six primary food categories over the ﬁve daily meals(i.e., breakfast, snack one, lunch, snack two, dinner)
+2based
+on sample meal plan serving assignments, (iv) food
+assignor : allocates the foods to the ﬁve daily meals while
+meeting all the serving requirements and considering the
+patient’s preferences, and (v) meal plan evaluator :computes the relevance score for every generated meal
+plan highlighting its compliance with patient preferences.
+We have conducted various experiments involving 9
+human testers and 124 meal plans to test the performanceofMPG . Results highlight MPG ’s effectiveness in gener-
+ating healthy and personalized meal plans, producing rec-
+ommendations that are on a par with those of humannutritionists, while complying with the testers’ preferences.
+The remainder of this paper is organized as follows.
+Section 2introduces background notions on nutrition
+health. Section 3brieﬂy reviews the literature and existing
+e-solutions revolving around meal planning. Section 4
+describes our MPG agent, its components, and function-
+alities. Section 5describes our experimental evaluation and
+results. Finally, Sect. 6 concludes with future directions.
+2 Background
+2.1 Nutrition health preliminaries
+A preliminary step to generating a meal plan is performing
+nutrition health assessment, where the human nutritionist
+collects input information regarding the patient, includinggender, age, height, and weight. Next, the body mass index
+(BMI) and the body fat percentage (BFP) can be identiﬁed
+as follows (Mahan et al .2012 ):
+B¼Weight Kg ðÞ
+Height2m2ðÞ: ð1Þ
+BFP¼Body Fat Weight Kg ðÞ /C2 100
+Total Body Weigh tKgðÞð2Þ
+While BMI is an indication of the weight status of a
+person, yet it is not signiﬁcant by itself since it disregards
+the patient’s body fat composition. For instance, the author
+in (Khan and Hoffmann 2003b ) demonstrated in a study of
+486 subjects that about 87% of the patients classiﬁed as
+normal and overweight following BMI were actually obese
+according to their BFP. Hence, the combination of BMIand BFP is usually adopted and allows for a better
+assessment.
+Once the patient’s BFP is identiﬁed (through a simple
+test that can be performed at a specialized clinic or phar-
+macy), the expert nutritionist can decide on the target BFP
+and weight of the patient, and the daily caloric intake (CI)required to reach the latter. Weight change comes down to
+the gap between the caloric intake (CI) and the caloric
+expenditure (CE), meaning the difference between theamount of energy acquired from food and the energy
+consumed by the human body, both measured in
+Kilocalories (Kcal). If the daily CI is larger than the dailyCE, the patient will gain weight in the long run, and vice1The Body Fat Percentage (BFP) is computed as the ratio of the
+patient’s body fat weight over the total body weight. It is a common
+and expressive metric used in nutrition health practice (cf. Section 2).
+2Our solution supports any number of daily meals. In the current
+study, we adopt a 5-meal plan which is typically adopted in healthnutrition literature.2562 G. Salloum, J. Tekli
+123versa (Hall et al. 2011 ). Once the daily CI has been
+determined, the expert nutritionist can produce a daily meal
+plan for the patient.
+In this study, we automate the process of meal plan
+generation, assuming that nutrition health assessment (i.e.,
+identifying the target BFP/weight and the required CI) has
+already been conducted (either by a human nutritionist orby an automated agent). We address the task of automating
+nutrition health assessment in a dedicated study (Salloum
+and Tekli 2021 ).
+2.2 Meal plan recommendation
+A major service provided by a nutrition expert is translat-
+ing the daily CI recommendation into an actual daily mealplan, where foods can be selected based on many factors,
+including: macronutrient composition, energy density,
+patient food preferences, food variety, and food compati-bility, among others. This can be performed in three main
+steps:
+1.Determining the amount of macronutrients Based on
+the daily CI, the expert determines in grams (g) the
+needed amount of daily macronutrients, which fall intothree categories: carbohydrates, protein, and fat. The
+latter are the basic constituents of any food (Rolls
+2009 ). The relationship between macronutrients and
+energy density can be described as follows: 1 g of
+carbohydrates or protein contains 4 Kcals, and 1 g of
+fat contains 9 Kcals (Rolls 2009 ). Based on the latter,
+CI can be transformed into grams of macronutrients
+using a set of mathematical formulas (Kathleen and
+Janice 2017 ).
+2.Determining the number of food servings Based on the
+needed amount of macronutrients, the expert determi-
+nes the number of servings from ﬁve well-deﬁned foodcategories
+3(starch, fruits, milk, vegetables, lean meat,
+and fats), where each food category contains food
+items sharing similar macronutrient contents based onadjusted serving sizes (Kathleen and Janice 2017 ).
+Each serving of a food has about the same amount of
+macronutrients and calories as the other foods in thesame category. This allows selecting multiple alterna-
+tive options from the list of foods in a certain category
+by determining the number of servings from thecategory as a whole (Valdez-Pena and Martinez-Alfaro
+2003 ). Converting the grams of macronutrients into
+food servings can also be computed using a set of well-deﬁned mathematical formulas (Kathleen and Janice
+2017 ).3.Selecting the food items The ﬁnal step in meal planning
+is to transform the number of servings from eachcategory into an actual meal plan. Here, meal planning
+goes beyond providing the correct numbers of servings
+and macronutrients. Several factors can be consideredby the human nutrition expert: (i) food preferences of
+the patient, (ii) compatibility between meal and foods
+(e.g., eggs are compatible with breakfast, whereas meatis compatible with lunch), (iii) inner compatibility
+between foods assigned to the same meal, to make sure
+that they go well together (e.g., eggs and milk arecompatible together, versus eggs and ﬁsh which might
+be less compatible), and (iv) variety of foods from day
+to day. Different from the previous tasks, there are nomathematical formulas to perform food item selection.
+This multi-factor process is intuitively resolved by
+human experts who rely on ‘‘common sense’’ reasoningand expertise to assign the necessary amount of food
+servings over the ﬁve meals of the plan, while
+attempting to respect the factors mentioned above.
+While various computerized solutions (cf. Sect. 3) have
+attempted to solve the different aspects of the meal plan-
+ning problem, yet, to our knowledge, there is no well-established process to produce a full-ﬂedged meal plan
+from scratch: based on a recommended CI, and performing
+food selection considering the different factors mentioned
+above.
+3 Related works
+This section brieﬂy describes computerized solutionsrelated to nutrition health and meal planning, organized
+following their computational techniques: (i) linear opti-mization, (ii) meta-heuristics, (iii) case-based reasoning,
+and (iv) fuzzy reasoning. We also brieﬂy describe (v) ex-
+isting e-solutions.
+3.1 Linear optimization methods
+One of the earliest approaches to solve the meal planning
+problem was put forward in 1945 in an attempt to ﬁnd the
+least cost meal by modeling the problem as a mathematicalmodel and adopting a trial-and-error-based approach (Stigler
+1945 ). The approach produced a list of unstructured foods
+that meet standard nutrition requirements while optimizingfood price. The latter solution was later extended and for-
+malized into the so-called Stigler diet problem model
+(Lancaster 1992 ), which comes down to a linear program-
+ming problem aiming to minimizeP
+J
+j¼1cj/C2xjsubject to
+PJ
+j¼1nij/C2xj/C21bifori=1 , 2 ,…,n, with xjC0 for all j, where 3Adopted based on the Diabetic Exchange List suggested by the
+American Dietetic Association (Kathleen and Janice 2017 ).Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2563
+123cjis the cost of the jth food, xjis the quantity of the jth food, nij
+is the ith nutrient content of the jth food, and biis the ith
+nutrient requirement. In the past two decades, the Stigler
+model has been adopted and extended using different vari-ations of the linear programming paradigm (e.g., integer
+programming (Lenstra 1983 ), mixed integer-linear pro-
+gramming (Schniederjans 1995 ), and goal programming
+(McCann-Rugg et al .1983 )) to solve the meal planning
+problem, e.g., (Bassi 1976 , Foytik 1981 , Silberberg Nutrition
+and the Demand for Tastes, Valdez-Pena and Martinez-Al-
+faro2003 ). In (Valdez-Pena and Martinez-Alfaro 2003 ), the
+authors use an exchange system for menu planning, offeringthe option of serving food substitutions from the same food
+group (e.g., for instance substituting 1/2 a cup of pasta with
+1/3 cup of white rice, since they both represent a serving fromthe starch food category). The problem is modeled using
+mixed integer-linear programming with special focus on
+preference maximization. Yet, the approach in (Valdez-Penaand Martinez-Alfaro 2003 ) does not consider food-meal
+compatibility and inter-food compatibility, and does not
+compute food portion sizes. In (McCann-Rugg et al. 1983 ),
+the authors place more emphasis on user food preferences
+while considering nutrition requirements (e.g., calories and
+macronutrients) and disregard other factors (e.g., inter-foodcompatibility and food-meal compatibility). The proposed
+approach does not associate foods into meal structures (e.g.,
+breakfast, lunch, dinner), and rather presents a set of rec-ommended foods in the form of an unstructured list of
+suggestions.
+A common problem with linear optimization approaches
+is that adding more variable constraints (i.e., more
+restrictions) to the problem signiﬁcantly reduces its feasi-
+bility/solvability (Schniederjans 1995 ). This makes it dif-
+ﬁcult to consider multiple factors (e.g., nutrition
+requirements, food preferences, variety, and compatibility)
+using this family of approaches.
+3.2 Meta-heuristic methods
+A few meta-heuristic approaches, using genetic algorithms
+or particle swarm optimization techniques, have been
+developed to produce personalized meal plans, e.g., (Ains-worth et al .2011 , Fister and Fister 2016 , Noor et al. 2018 ,
+Seljak 2009 ). Compared with linear optimization algo-
+rithms, meta-heuristics do not guarantee a globally optimalsolution, but rather provide a sufﬁciently good solution to the
+problem (Bianchi et al .2009 , El-Ghazi 2009 ).
+In (Noor et al. 2018 ), the authors introduce a self-
+adaptive hybrid genetic algorithm to perform menu plan-
+ning for Malaysian adolescent school students aged
+between 13 and 18. The approach aims at producing dailystructured meal plans to meet nutrient intake requirements
+while optimizing meal budget and food variety. Integerencoding is used to map the foods from each food category
+(e.g., fruits, vegetables, starch, etc.) to a chromosome
+associated with one of six meals (e.g., breakfast, ﬁrst snack,
+lunch, etc.). The ﬁtness function is evaluated to meet thebudget constraint, where the total cost of the candidate
+solutions in the meal should not surpass the budget and the
+recommended nutrient intake. The produced meal planswere not empirically evaluated by nutrition experts. In
+(Gaa´l et al. 2005 ), the authors introduce a divide-and-
+conquer multi-level genetic algorithm to produce person-
+alized weekly meal plans, aiming to satisfy macronutrient,
+user preference, and inter-food compatibility constraints. Aglobal ﬁtness function is deﬁned as the sum of multiple
+individual functions evaluating each criterion. Empirical
+results show that the proposed solution can produce near-optimal meal plans after around 1000 iterations, requiring
+10 to 15 min of processing time. A similar multi-level
+genetic algorithm is introduced in (Seljak B 2009 ), con-
+sidering economic cost and various aesthetic parameters
+(e.g., taste, color, temperature, and preparation method) to
+produce an n-day meal plan. Empirical results show that
+250 iterations are needed to produce feasible solutions,
+requiring between several minutes and a couple of hours of
+processing time to generate a set of 21-day meal plans. In(Kaldirim and Kose 2006 ), the authors introduce another
+multi-level genetic approach to generate meal plans by
+optimizing macronutrient fulﬁllment, user preferences, andfood price. The proposed approach produces lists of rec-
+ommended foods as feasible solutions, rather than pro-
+ducing a structured meal plan. In (Fister and Fister 2016 ),
+the authors introduce a particle swarm optimization solu-
+tion to produce structured meal plans that can enhance an
+athlete’s performance according to her/his exercise pro-gram. It accepts as input: (i) a description of the three-day
+exercise program of the athlete represented by the average
+heart rate and the duration of each exercise, which can bemathematically converted into the amount of burned
+calories, and (ii) the potential foods that can be assigned to
+each meal as well as the amount of calories in each food.The ﬁtness function attempts to match the amount of
+calories burned with and the amount of calories contained
+in the meal. Caloric requirements are the only factor con-sidered in the meal planning process, where other factors
+such as macronutrients, food preferences, variety, and
+compatibility are not considered. In a recent study in(Tu¨rkmenoglu et al. 2021 ), the authors model the diet
+problem as a many-objective multi-dimensional knapsack
+optimization problem. Given a set of available food items,the proposed solution aims at selecting a subset of the items
+allowing to optimize all objectives simultaneously, without
+exceeding the knapsack capacities. The authors utilize anexisting popular many-objective evolutionary algorithm to
+solve the problem, i.e., non-dominated sorting genetic2564 G. Salloum, J. Tekli
+123algorithm III (NSGA-III) (Deb and Jain 2014 ). They con-
+sider three objectives in their experiments: cost, preference,
+and preparation time, taking into account both upper-level
+and lower-level daily nutrient constraints for every meal.Experimental results highlight the quality of the recom-
+mended foods in evaluating energy and protein satisfaction,
+and the contribution of each food item to the objectivefunctions. Note that the study in (Tu ¨rkmenoglu et al. 2021 )
+focuses on food-meal recommendation, and does not
+address the issues of producing meal plan structures and
+considering composite foods.
+3.3 Case-based reasoning methods
+Case-based reasoning methods, e.g., (Husain et al .2011 ,
+Khan and Hoffmann 2003a ,b, Petot et al. 1998 ), attempt to
+recommend meal plans by (i) identifying the best meal plan
+from a set of existing ones and then (ii) adapting andrevising the plan to serve the target patient’s needs.
+In (Petot et al. 1998 ), the authors consider minimum and
+maximum nutrient constraints and user food preferences toselect the best meals from a pool of existing meal plans for
+similar patients. A rule-based pattern regulator mechanism
+is used to reﬁne the selected meals when they do notproperly ﬁt their nutrient requirements. Nonetheless, the
+authors state that some of their generated plans contain odd
+food combinations and lack the human common sensefactor. A similar approach is introduced in (Khan and
+Hoffmann 2003a ,2003b ), combining case-based reasoning
+with a rule-based feedback mechanism to produce expert-tailored meal plans. The system accepts as input as a set of
+patient requirements (namely nutrient requirements, and
+special medical cases such as: liver mal function, consti-pation, etc.) and a set of possible solutions (i.e., candidate
+meal plans). A fuzzy scoring mechanism is used to score
+and rank the candidate meal plans based on the nutrientrequirements of the patient. A domain expert is then tasked
+with selecting and modifying the ‘‘best’’ meal plan to better
+adapt to the patient’s requirements, while providing anexplanation for every modiﬁcation. The explanations are
+represented as if-else rules, which are incrementally
+acquired and later used to generate meal plans for similarfuture patients. The study evaluates factors such as the
+number of actions needed and the number of rules needed
+to produce improved meal plans. For instance, 330 ruleswere added by the domain expert before the tool was able
+to produce its own meal plans, considering only two groups
+of similar patients (Khan and Hoffmann 2003a ,2003b ,
+Husain et al. 2011b ). Furthermore, expert intervention is
+required to evaluate and determine the nutrient goals for
+every patient. In, the authors combine case-based reasoningwith a genetic algorithm. A database is set-up to acquire
+patient health information and their previouslyrecommended meal plans. A meal plan generator mecha-
+nism is built using a typical genetic algorithm, where:
+(i) crossover is applied on the meal plans to exchange some
+of their foods, (ii) mutation is performed by stochasticallyaltering the meal plan’s food items, and (iii) selection is
+performed to identify the meals that ﬁt best the user’s
+nutrition requirements. The patient can choose to eitheraccept or alter the suggested meal plan by substituting the
+recommended foods. Initial experiments show that the
+produced meal plans do not always meet the required
+nutrition constraints due to the fast convergence of the
+genetic algorithm. The authors suggest increasing the sizeof the patient database as a potential solution to the con-
+vergence problem. The proposed solution is mainly
+focused on fulﬁlling the patients’ nutrition requirementsand does not consider other factors such as food prefer-
+ences, food variety, food-meal compatibility and inter-food
+compatibility.
+3.4 Fuzzy reasoning methods
+Various methods have been developed to infer the health-
+iness of meals and meal plans by combining fuzzy rea-
+soning with food and patient proﬁle ontologies, e.g., (Leeet al.2009 ,2010 , Wang 2009 ). Most methods in this cat-
+egory address meal plan assessment of existing manually
+generated meal plans, rather than automated meal plangeneration. They make use of the Fuzzy Logic (FL) para-
+digm (Lee et al. 2010 ), as a robust solution designed to deal
+with uncertainties in real-life applications. For instance, theapproach in (Wang 2009 ) receives as input: a meal sug-
+gested or consumed by a patient, and provides as output: a
+fuzzy score highlighting the likelihood of the meal beinghealthy or not (e.g., a meal plan can be considered as 0.3
+healthy and 0.7 unhealthy simultaneously, instead of fully
+belonging to one single category solely). The authors in(Wang 2009 ) target Taiwanese foods, and utilize a dedi-
+cated food ontology describing meals, meal courses, and
+foods with their nutrition information. The latter feed intothe fuzzy set deﬁnitions that are used in the FL inference
+mechanism. Experimental results on 20 recorded meals
+show high correlation ( &90%) between human expert and
+system generated scores. The agent requires domain expert
+intervention to determine the caloric and nutrient require-
+ments of each patient before the fuzzy decision-makingprocess can take place. The approach in (Wang 2009 )i s
+extended to include a type-2 fuzzy system
+4in a subsequent
+4Type-2 FL is an extension of the original FL paradigm, referred to
+as type-1 FL, where every truth degree has an uncertainty degree
+associated with it (e.g., a person is considered 0.3 underweight with
+0.9 certainty, i.e., we are 90% certain that the person is 30%overweight). If there is no uncertainty, then a type-2 fuzzy set isreduced to a type-1 fuzzy set (Karnik and Mendel 2001 ).Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2565
+123study (Lee et al. 2009 ), without however showing major
+improvement over the type-1 fuzzy system approach, as
+stated by the authors. A similar study is introduced in (Lee
+et al. 2010 ) to perform meal plan assessment for patients
+suffering from diabetes. It produces as output a fuzzy
+membership score associated with a linguistic variable
+(e.g., ‘‘healthy’’, ‘‘very healthy’’, ‘‘not healthy’’, etc.) toassess the healthiness of a given input meal w.r.t.
+5a target
+patient. Nonetheless, the proposed solution does not pro-
+vide any decision making regarding the ideal energy
+requirements that patients should aspire to: promoting
+either weight loss or weight gain based on their needs. In(Lee et al .2012 , Lee and Lan 2015 ), the authors integrate
+evolutionary computation with fuzzy processing, attempt-
+ing to learn the food ontology’s fuzzy sets and fuzzyinference rules by mapping them into a chromosome rep-
+resentation and then applying genetic evolution (via dedi-
+cated crossing, mutation, and selection operators) todetermine the desired output for each case. While the
+genetic process allows to automate part of the fuzzy model
+generation process, yet domain expert involvement isrequired in the selection phase, and in determining the
+caloric and nutrient requirements of the participants, as
+stated by the authors.
+Different from previous fuzzy methods which only
+perform meal plan assessment, the authors in (Lee et al .
+2010 , Lee et al .2008 ) introduce a solution that accepts as
+input the foods consumed in the breakfast and lunch meals
+of a diabetes patient, and infers as output the remaining
+caloric allowance and the needed food servings for thedinner meal. Using the fuzzy food and personal proﬁle
+ontologies from (Lee et al. 2012 ), the solution suggests
+multiple food options from each food category to ﬁt theservings’ requirements for dinner, without however pro-
+ducing a complete dinner meal. In other words, it does not
+combine foods to form a complete meal, but rather sug-gests food options to help the patient manually produce the
+ﬁnal dinner meal.
+3.5 Existing e-solutions
+Various nutrition and health-related mobile and Web
+applications have been developed recently and are
+becoming increasingly available online. Calorie tracking
+tools, e.g., (Evans 2017 , Livestrong Foundation 2020 ,
+MyNetDiary Inc. 2020a ,b,c, SparkPeople Inc. 2020 ),
+assist patients in monitoring their daily caloric intake (CI)
+and consumed macronutrients by accepting as input thepatient’s consumed foods, and producing/calculating as
+output the amount of calories and macronutrients contained
+in the consumed foods. Meal planning tools, e.g.,(EatThisMuch Inc. 2020a ,b,c, Fitness Meal Planner 2020 ,
+MakeMyPlate 2020a ,b,c, Yang et al .2017 ), generate daily
+meal plans based on patient provided CI requirements. One
+such tool is MakeMyPlate Inc. ( 2020a ;b,c), a mobile
+application that provides patients with daily pre-deﬁned
+meal plans fulﬁlling user speciﬁed CI levels. It allows the
+patient to replace a meal with an existing meal stored in thedatabase, without verifying whether the replacement meal
+is calorically equivalent to the original one (which might
+result in surpassing or dropping below the recommended
+CI and macronutrient amounts). The tool does not consider
+the patient’s food preferences. Another solution is Eat-ThisMuch Inc. ( 2020a ;b,c), which accepts as input the
+patient’s basic health state information (e.g., gender, age,
+height, weight, and level of activity) in addition to the BFP.It also accepts as input the user’s destination weight in
+textual from (i.e., maintain weight, lose weight, gain
+weight, and gain muscle), the user’s preferred diet type(e.g., Mediterranean, vegetarian), as well as her food
+preferences (i.e., whether the user wants a food item to
+appear or not in the daily mean plans). The application thenproduces as output daily meal plans. While powerful, yet
+this solution has a few limitations, namely: (i) allowing the
+user to generate meal plans for the current day only(planning ahead required premium subscription), and (ii)
+considering user preferences in an ‘‘ include ’’ or ‘‘ do not
+include’’ crisp fashion (rather than allowing a gradient
+rating of food preferences, e.g., [[0, 1] from ‘‘not prefer-
+able’’ to ‘‘highly preferable’’, which would be more useful
+in producing adapted meal plans). Fitness Meal Planner(Fitness Meal Planner 2020 ) is yet another online appli-
+cation sharing most of the functionality and limitations of
+the latter solution. The authors in (Yang et al. 2017 )
+describe an online framework to monitor foods consumed
+by the patient to help perform personalized meal planning,
+using food image recognition through machine learning.The system learns patient preferences by allowing them to
+select their favorite foods by uploading pictures of them.
+Then, image analysis is performed through a dedicatedconvolutional neural network to recognize the foods in the
+picture, allowing the system to later recommend similar
+foods from a pre-deﬁned food database. The aim of thestudy is to improve the recommendations of survey-based
+systems (where food preferences are learned through
+manual patient surveys) by using image analysis-basedpreference learning. Nonetheless, the study in (Yang et al.
+2017 ) does not produce full-ﬂedged meal plans that meet
+the CI requirements of a patient.
+3.6 Discussion
+To sum up, most meal planning solutions lack a completely
+automated process and require domain expert intervention5With respect to.2566 G. Salloum, J. Tekli
+123at different stages of the recommendation process (e.g.,
+identifying macronutrient distribution, providing pre-de-ﬁned meal plans for case-based reasoning, or combining
+recommended foods into meal structures). Also, most
+solutions focus on fulﬁlling the patients’ nutritionrequirements (in terms of caloric intake (CI) and
+macronutrients) while disregarding other relevant factors
+such as patient food preferences, food variety, food-mealcompatibility, as well as inter-food compatibility. A most
+recent study in (Tu ¨rkmenoglu et al. 2021 ) does consider
+many factors including food item cost, preference, andpreparation time, by modelling the diet problem as a many-
+objective optimization problem, yet the authors focus on
+food-meal recommendation and do not address the issuesof producing meal plan structures and considering com-
+posite foods.
+4 Proposal
+In this study, we introduce an intelligent agent titled MealPlan Generator (MPG)which aims at automating the meal
+plan recommendation services offered by a nutrition expertwhile addressing the limitations of existing e-solutions
+mentioned above. MPG’s overall architecture in shown in
+Fig. 1, and consists of ﬁve main components. First, the
+Macronutrients Calculator computes the amount of
+macronutrients (i.e., carbohydrates, protein, and fat) in
+grams, based on the daily CI recommendation (provided bya human nutritionist or a dedicated automated agent (Sal-
+loum and Tekli 2021 )). Second, the Servings Calculator
+computes the daily amount of servings for each of the sixprimary food categories (i.e., starch, fruits, milk, vegeta-
+bles, lean meat, and fats)
+6based on the amounts of
+macronutrients produced by the macronutrient calculator.Third, the Servings Assignor splits the servings for each of
+the six primary food categories over the ﬁve daily meals
+(i.e., breakfast, snack one, lunch, snack two, dinner) basedon sample meal plan serving assignments. Fourth, the Food
+Assignor allocates the foods to the ﬁve daily meals whilemeeting all the serving requirements and considering the
+patient’s preferences. Finally, the Meal Plan Evaluator
+computes the relevance scores for the generated meal planshighlighting their compliance with the patient chosen fac-
+tors (e.g., assigning different weights for food preferences,
+variety, and compatibility). While the ﬁrst two components(performing macronutrient and serving calculation) are
+evaluated mathematically following well-established pro-
+cedures from nutrition health literature (cf. Sect. 2),
+nonetheless, there is a lack of automated solutions to
+handle the last three components (performing servings
+assignment, food assignment, and relevance scoring). Wesolve the latter by introducing an adapted version of the
+transportation optimization problem, along with a set of
+relevance scoring functions speciﬁcally designed to solveand evaluate the meal planning task. We further describe
+each of the above components in the following sub-
+sections.
+Note that MPG is developed as part of a comprehensive
+framework titled Personal Intelligent Nutritionist (PIN)
+(Salloum and Tekli 2021 ) which aims at automating the
+full nutrition heal assessment and recommendation pipe-
+line, including: (i) weight assessment and recommendation
+based on various inputs (age, gender, height, weight, andBFP), and then recommending a target weight and BFP for
+the patient; (ii) CI and exercise recommendation based on
+the level of activity as well as the target weight and BFP ofthe patient; (iii) progress evaluation and recommendation
+adjustment, especially when the patient is not making the
+expected progress; leading to (iv) meal plan generationthrough MPG. This paper describes MPG, while PIN’s
+remaining modules are developed in (Salloum and Tekli
+2021 ).
+4.1 Macronutrients calculator component
+A normal diet translates the caloric intake (CI) into grams
+of macronutrients as follows. First, the CI’s calories are
+Fig. 1 Simpliﬁed diagram describing MPG’s overall architecture
+6Adopted based on the Diabetic Exchange List suggested by the
+American Dietetic Association (Kathleen and Janice 2017 ).Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2567
+123distributed among the three macronutrient categories: (i)
+45% to 55% to carbohydrates, 15% to 20% to protein, and
+20% to 30% to fat (Kathleen and Janice 2017 ). In this
+study, we adopt the following commonly used percentageclassiﬁcation based on nutrition expert recommendations:
+50% carbohydrates, 20% protein, and 30% fat. Second, the
+required amount of grams of each macronutrient is com-puted as follows (Kathleen and Janice 2017 ):
+grams
+carbohydrates ¼calories /C250
+100/C24
+gramsprotein ¼calories /C220
+100/C24
+gramsfat¼calories /C230
+100/C29ð3Þ
+Example Consider for instance a recommendation of
+CI = 2107 Kcals. Following the above described process
+and formulas, the Macronutrients Calculator component
+produces the following macronutrient gram distribution:
+gramscarbohydrates ¼2107 /C350
+100/C34¼263grams
+gramsprotein ¼2107 /C320
+100/C34¼105grams
+gramsfat¼2107 /C330
+100/C39¼70grams
+4.2 Servings calculator component
+In this study, we adopt a widely utilized approach for
+servings calculation based on the exchange list system fordiabetic meal planning (Kathleen and Janice 2017 , Valdez-
+Pena and Martinez-Alfaro 2003 ). The exchange list orga-
+nizes foods in categories, where each category groups fooditems which share similar nutrient contents based on
+adjusted serving sizes. Each serving of a food has about the
+same amount of carbohydrates, protein, fat, and calories asthe other foods in the same category. Here, we adopt the six
+basic food categories shown in Table 1. By determining the
+number of servings from a speciﬁc category, multipleoptions can be selected from the list of foods available for
+that category.
+In addition to basic foods (e.g., bread, beans, milk), we
+consider composite foods (e.g., grilled chicken, pizza,
+burger sandwich), consisting of dishes deﬁned as combi-
+nations of different servings from different categories. Forexample, a grilled chicken sandwich is the equivalent of 3
+servings of carbohydrates (starch) and 4 servings of lean
+meat.
+The second step of the meal planning process consists in
+converting the grams of macronutrients into servings from
+each category. We compute the amount of servings using aprocess adapted from (Valdez-Pena and Martinez-Alfaro
+2003 ):
+1. Select one serving of milk.
+2. For CI below or equal to 2200 Kcals, select 3 servings
+of fruits and 3 servings of vegetables.
+For CI above 2200 Kcals, fruit servings are
+increased from 3 to 4 and vegetable servings are
+increased from 3 to 5.
+3. Calculate the number of starch servings by subtracting
+the amount of carbohydrates obtained from milk,
+vegetables, and fruits, from the total required amount
+of carbohydrates. The amount of carbohydrates calcu-lated is divided by 15 since each serving of starch
+contains 15 g of carbohydrates (cf. Formula 4).
+4. Calculate the number of meat servings by subtracting
+the amount of protein from milk, vegetables, fruits, and
+starch servings, from the total required amount of
+protein. Fruits contain zero grams of protein. The
+amount of protein calculated is divided by 7 since each
+serving of meat contains 7 g of protein (cf. Formula 5).
+5. Finally, calculate the number of fat servings in the
+same fashion: based on the number of grams of fat in
+the pre-selected servings. Note that fruits and vegeta-bles contain zero servings of fat. The amount of fat
+calculated is divided by 5 since each serving from the
+fat food category contains 5 g of fat (cf. Formula 6).
+s
+starch¼gcarbohydrates /C012/C2smilkþ5/C2svegetable þ15/C2sfruit ðÞ
+15ð4Þ
+smeat¼gprotein /C08/C2smilkþ5/C2svegetable þ3/C2sstarch ðÞ
+7ð5Þ
+sfat¼gfat/C01/C2smilkþ2/C2smeatþ2/C2sstarch ðÞ
+5ð6Þ
+where sis the number of servings from a food category
+andgthe amount of grams of a macronutrient.
+4.2.1 Running example
+Consider the same example from the previous section,
+where CI = 2107 Kcals was provided as input to the
+Macronutrient Calculator, resulting in the followingmacronutrient assignments: 263 g of carbohydrates, 105 g
+of protein, and 70 g of fat. The latter are provided as input
+to the Servings Calculator , which produces the following
+numbers of servings per food category: s
+milk¼1msfruit¼
+3;svegetable ¼3;sstarch¼263/C012/C31þ5/C33þ15/C33
+15¼12:73¼13;
+smeat¼105/C08/C31þ5/C33þ3/C313
+7¼7:42¼7; and sfat¼
+70/C01/C31þ2/C37þ2/C313
+5¼6.2568 G. Salloum, J. Tekli
+1234.3 Servings assignor component
+This component distributes the number of servings from
+each food category over the daily meals. In this study, we
+adopt a ﬁve-meal approach: three main meals (i.e., break-
+fast, lunch, dinner) and two snacks in between (i.e.,morning snack referred to as snack one , and afternoon
+snack referred to as snack two). Given the lack of well-
+established processes for assigning food category servingsto daily meal servings, we adopt a template-based
+approach: where a food category|daily meal mapping
+template is automatically generated by aggregating a set ofrepresentative sample assignments provided by nutrition
+experts. The number of servings can be aggregated in
+several ways, using for instance the maximum, minimum,average or weighted sum aggregation functions. In our
+study, we make use of the weighted sum function since it
+enables the user to choose the weight of each samplemapping in accordance with her/his notion of mapping
+relevance (and comes down to the average function when
+no user preferences are provided). For each of the N
+samples provided by the nutrition expert, the aggregate
+number of servings s
+Meal j
+Catifor each food category cat iand
+daily meal meal jis computed as follows:
+sMeal j
+Cati¼fAgg
+n¼1:::Nsmealn
+j
+catn
+i/C16/C17
+¼X
+n¼1:::Nwn/C2sMealn
+j
+Catn
+i
+whereP
+n¼1...Nwn¼1 and w n=1…N[[0, 1].
+Consequently, the template’s values are proportionally
+scaled to the CI at hand producing the corresponding food
+category|daily meal servings matrix.
+4.3.1 Running example
+Consider the same example from the previous sections,
+where an input CI = 2107 kcals resulted in 1, 3, 3, 13, 7,
+and 6 servings of milk, fruits, vegetables, starch, meat, andfat, respectively (cf. Sect. 4.2). By considering the food
+category|daily meal template provided in Table 2a and
+after scaling it to the current example, the ServingsAssignor component produces the servings plan shown in
+Table 2b. We adopt linear scaling by multiplying the
+template’s serving distribution percentages by the total
+number of required servings and rounding the fractions.
+For instance, following the 2000 kcal template in Table 2a,
+the serving distribution for starch over the ﬁve meals (i.e.,
+breakfast, snack one, lunch, snack two, and dinner) is 3, 2,
+3, 2, and 2, respectively, amounting to a total number of 12starch servings. This results in the following serving dis-
+tribution percentages over the ﬁve meals: 25%, 16%, 25%,
+16%, and 16%. These percentages are multiplied by thetotal number of required starch servings = 13 for the
+CI = 2107 kcals example, resulting in the following serv-
+ing distribution for the ﬁve meals: 3.25, 2.08. 3.25, 2.08,and 2.08. These serving numbers are rounded to 3, 2, 3, 2,
+and 2, and a post calculation correction is performed to
+supply the remaining required serving fractions:0.25?0.08?0.08?0.25?0.08 = 0.74, rounded to 1,
+by randomly sorting the meals and adding one serving per
+meal until the additional serving fractions are supplied. In
+this example, the additional 1 serving is added to the snack
+twomeal, resulting in the ﬁnal 3, 2, 3, 3, 2 serving distri-
+bution for starch.
+4.4 Food assignor component
+The ﬁnal and central step in meal planning is to transformthe number of servings into an actual meal plan, byassigning them actual foods based on the required servings.
+Meal planning however goes beyond providing the num-
+bers correctly. Important ‘‘logical’’ factors need to beconsidered, including: (i) the patient’s food preferences
+(regarding what foods are preferred and what foods are not
+pleasurable), (ii) the food’s compatibility with the meal(e.g., eggs and milk are compatible with breakfast, whereas
+ﬁsh is more compatible with lunch), (iii) the inter com-
+patibility between foods assigned to the same meal (whatfoods go well with each other based on taste and appear-
+ance), and (iv) the variety of the foods recommended from
+day to day. Other factors could be considered based on theTable 1 Food exchange categories adopted in MPG and their caloriﬁc and macronutrient properties per serving
+Food categories Carbohydrates (grams) Protein (grams) Fat (grams) Calories (Kcals)
+cat1 Starch (Bread, cereals, etc.) 15 0–3 0–1 80
+cat2 Fruits 15 – – 60
+cat3 Milk (low-fat) 12 8 0–3 100
+cat4 Non-starchy vegetables 5 2 – 25
+cat5 Meat (lean) – 7 0–3 45
+cat6 Fats – – 5 45Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2569
+123patient or on the nutrition expert’s needs. Given the lack of
+well-established processes to solve this problem, we modelthe food assignment process as an adapted transportation
+optimization problem that ﬁts all mentioned requirements,
+while accounting for multiple supply and demand types(i.e., the different food categories) as well as the different
+factors that play into the meal planning task.
+4.4.1 Adapted transportation problem
+In this sub-section, we present a modiﬁcation of the
+transportation problem that ﬁts the requirements of our
+meal plan generation problem.
+7The transportation problem
+is concerned with ﬁnding the minimum cost of transporting
+a single commodity from a given number of sources to a
+given number of destinations. The data required by themodel include: (i) the amount of supply at each source and
+the amount of demand at each destination, as well as (ii)
+the unit transportation cost of the commodity from eachsource to each destination (Hira and Gupta 2014 , Winston
+and Venkataramanan 2003 ). In our study, we model our
+adaptation of the transportation problem as follows (cf.Table 3).1. We consider mdifferent supply centers (sources)
+labeled with food
+i= 1.. m, where every supply center
+designates an available food from the food categories.
+2. We consider n= 5 different demand centers (destina-
+tions) labeled meal j=1..n, where every demand center
+designates one of the 5 meals considered in our study(i.e., breakfast, snack one, lunch, snack two, and
+dinner).
+3. The demand required at each demand center meal
+j
+represents the number of servings form each food
+category required in the meal. This is modelled as a 6-
+dimentional vector, noted Dj/C131!. corresponding to each
+of the 6 categories of basic foods considered in our
+study (i.e., starch, fruits, milk, vegetables, lean meat,
+and fat).8
+4. The supply capacity of each supply center food i
+represents the available amount of servings from the
+corresponding food. Since demand is modeled as a
+vector of serving requirements, supply is also modeledas a 6-dimensional vector representing the number of
+servings from each food category that food
+iis
+composed from, noted Si!, multiplied by the available
+amount of servings of that food, noted si. We represent
+byx(i, j)the number of servings supplied from supply
+center food ito demand center meal j.
+5. The cost function, associating a cost value with every
+transportation operation, is deﬁned as an extensible
+aggregation function that combines the different cost
+factors considered in our meal planning scenario(including, patient preferences, meal-food compatibil-
+ity, inter-food compatibility, food variety, and price).
+We represent by c
+(i, j) the cost associated withTable 2 Food category|Daily
+Meal mapping exampleFood category Total Servings Breakfast Snack one Lunch Snack two Dinner
+a. Template for 2000 kcal CI servings plan
+cat1 Milk 1 1 0 0 0 0
+cat2 Fruit 3 0 1 0 2 0
+cat3 Vegetable 3 1 0 1 0 1
+cat4 Starch 12 3 2 3 2 2
+cat5 Meat 7 1 0 4 0 2
+cat6 Fat 5 1 1 2 0 1
+b. Scaled servings plan for running example with CI =2107 Kcals
+cat1 Milk 1 1 0 0 0 0
+cat2 Fruit 3 0 1 0 2 0
+cat3 Vegetable 3 1 0 1 0 1
+cat4 Starch 13 3 2 3 3 2
+cat5 Meat 7 1 0 4 0 2
+cat6 Fat 6 2 1 2 0 1
+7An early version of MPG ’s transportation optimization solution is
+mentioned in (Salloum et al. 2018 ), where the authors consider: i)
+basic food items only (the current study introduces a new model
+integrating both basic and composite foods, cf. Sect. 4.4), ii) the
+traditional transportation problem only (the present paper introduces anew multi-factor adaptation of the transportation problem, speciﬁcallydesigned to handle composite foods, cf. Sect. 4), iii) pre-deﬁned static
+food-meal cost values deﬁned by experts (the present paper introduces
+a dynamic approach consisting of a battery of novel mathematicalcost functions – cf. Sect. 4.4.3 – and meal plan evaluation functions –cf. Sect. 4.5).
+8Compared with typical transportation problem formulations where
+demands are represented as 1-dimentional scalar values.2570 G. Salloum, J. Tekli
+123delivering the servings from supply center food ito
+demand center meal j.
+4.4.2 Demand and supply vectors
+As previously described, each meal in our adapted trans-
+portation problem serves as a demand center. Following the
+food exchange list system adopted in our study (cf.Sect. 4.2), a meal has separate requirements for each of the
+six basic food categories noted cat
+1-to-cat 6.In order to
+account for this multi-dimensional requirement,9we model
+demand as a vector of serving requirements:
+D~¼d1;d2;d3;d4;d5;d6 ðÞ ð 8Þ
+where d1-to-d6represent the requirements of the six food
+categories cat1-to-cat6, respectively.10
+4.4.3 Running example
+Considering the serving plan presented in Table 2, the
+corresponding demand vectors for every meal are deﬁned
+as follows: DBreakfast/C131/C131/C131/C131/C131!¼1;0;1;3;1;2 ðÞ ,
+DSnackOne/C131/C131/C131/C131/C131 !¼0;1;0;2;0;1 ðÞ , DLunch/C131/C131/C131!¼0;0;1;3;4;2 ðÞ ,
+DSnackTwo/C131/C131/C131/C131/C131 !¼0;2;0;3;0;0 ðÞ , and DDinner/C131/C131/C131/C131!¼0;0;1;2;2;1 ðÞ .
+A demand is considered met once all the requirements inthe demand vector are met.
+In addition, each food serves as a supply center. Here,
+we distinguish between: (i) basic foods which can bemapped 1-to-1 with the six food categories (cat
+1-to-cat 6)
+mentioned above, and (ii) composite foods which consist of
+combinations of basic foods. Foods, both basic and com-posite, will serve as supply centers aiming to fulﬁll theservings of each meal. Hence, we model supply as a vector
+of available servings as follows:
+S~¼s
+1;s2;s3;s4;s5;s6 ðÞ ð 9Þ
+where s1-to-s6represent the supply from each of the food
+categories, cat 1-to-cat 6, respectively. Note that a basic food
+will only supply the category it belongs to, whereas a
+composite food can supply many categories simultaneously(based on the nature of the food and its constituents). For
+example, considering basic foods on the one hand: one
+serving of yogurt will supply category milk (i.e., cat
+1), and
+one serving of chicken will supply category meat (i.e.,
+cat5), with the following supply vectors: Smilk/C131/C131!¼
+1;0;0;0;0;0 ðÞ andSchicken/C131/C131/C131/C131!¼0;0;0;0;1;0 ðÞ , respectively.
+On the other hand, chicken sandwich, which is a composite
+food, is equivalent to 3 servings of starch (i.e., cat 4) and 4
+servings of meat (i.e., cat 5) and is represented as:
+SChikenSandwich/C131/C131/C131/C131/C131/C131/C131/C131 !¼0;0;0;3;4;0 ðÞ .
+As for the supply amount, it is determined based on two
+factors: (i) the recommended amount of servings to beconsumed per day, and (ii) the available food stock. We
+deﬁne supply as follows:
+s¼Recommended if Recommended \InStock
+InStock otherwise/C26/C27
+ð10Þ
+This is necessary to make sure that we select the amount
+of servings from the available stock without surpassing the
+recommended amounts. Hence, the supply vector isweighted by supply amount sas follows:
+S~¼s/C2s
+1;s2;s3;s4;s5;s6 ðÞ ð 11Þ
+4.4.4 Cost function
+The transportation matrix is a cost-based matrix, where
+each supply center (food) is related to each demand center
+(meal) through the cost of supplying the demand center(meal) from the supply center (food). Here, we deﬁne cost
+as the inverse of the likelihood of a food being associated
+with a meal; meaning the lower the cost the more likely thefood will be assigned to a meal, and vice versa. This is
+inspired from human experts’ thought process, who tend to
+consider foods that are more likely to be assigned to ameal, based on an overall likelihood estimation considering
+different factors. More formally, we deﬁne the cost func-
+tion for delivering servings from supply center food
+ito
+demand center meal jas an extensible weighted sum of
+multiple cost factors:
+cTotal i;jðÞ ¼P4
+r¼1wr/C2cri;jðÞ2 0;1½/C138 ð12ÞTable 3 Food assignment transportation matrix
+Cost per food distributed Supply
+Meal12 … n
+Food 1 c
+(1,1) c(1,2) … c(1,n) s1/C2S1!
+2 c(2,1) c2,2 … c(2,n) s2/C2S2!
+… ……… ……
+mc (n,1) …… c(m,n) sm/C2Sm/C131!
+Demand !D1 !D2 … !Dn
+9Compared with traditional transportation problem formulations
+where every demand center has one single requirement from a given
+supply center.
+10In the formula, we represent the vector as its transpose for ease of
+presentation.Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2571
+123where iand j,respectively, represent food iand meal j’s
+indices in the transportation matrix, cris the cost associated
+with each of the following 5 factors considered in our
+current study (more factors can be later added followingthe user’s needs): (i) food preference, (ii) food occurrence,
+(iii) food-meal compatibility, and (iv) inter-food compati-
+bility; and w
+ris the weight assigned to each cost factor,
+such that 8wr[[0, 1] andP4
+r¼1wr¼1. We describe each
+of the cost factors below.
+Food preference cost: This cost simulates the human
+decision-making process in choosing foods based onpatient preferences. Each food is associated with a pref-
+erence cost determined by the patient, using linguistic
+qualiﬁes: e.g., likes, extremely likes, or dislikes (which are
+easier for the patient to provide, rather than providing
+scalar inputs). Here, we adopt ﬁve linguistic qualiﬁers
+(more qualiﬁers can be added to increase cost granularity)and heuristically convert them to normalized numeric
+values [[0, 1]:
+c
+1i;jðÞ ¼ cFoodPref food i ðÞ
+¼0 if patient extremely likes food
+0:25 if patient likesfood
+0:5 if patient is neutral toward food
+0:75 if patient dislikes food
+1 if patient extremely dislikes food8
+>>>><
+>>>>:9
+>>>>=
+>>>>;
+20;1½/C138
+ð13Þ
+Note that we use the same numerical scale/granular-
+ity[{0, 0.25, 0.5, 0.75, 1} in deﬁning all cost factors for
+fairness of comparison. Yet any other numerical scale can
+be adopted as needed.
+Food occurrence cost The occurrence cost factor is
+included to avoid repetitive occurrences of foods, which is
+one of the main factors required for healthy meal planning.This is achieved by increasing the costs of foods that are
+repetitively selected using a certain scaling factor. After
+reaching high enough cost values (or the maximumcost = 1) such that the food item is no longer selected, the
+cost is reset to 0 to favor its re-selection in the following
+iteration. More formally:
+c
+2i;jðÞ ¼ cFoodOcc food i ðÞ ¼ Nboccfood i ðÞ /C2 a
+¼0 if occurrence is very likely
+0:25 if occurrence is likely
+0:5 if occurrence is somehow likely
+0:75 if occurrence is unlikely
+1 if occurrence is very unlikely8
+>>>><
+>>>>:9
+>>>>=
+>>>>;
+20;1½/C138
+ð14Þ
+where Nb
+occrepresents the number of consecutive daily
+occurrences of food i, and aits scaling factor. Weheuristically choose a’s initial value to be = 0.25 and
+bound the maximum number of consecutive occurrences at4, in order to produce occurrence costs [{0, 0.25, 0.5,
+0.75, 1} such that Nb
+occ= 1 produces cost = 0.25, Nbocc-
+= 2 produces cost = 0.5, Nbocc= 3 produces cost = 0.75
+andNbocc= 4 produces maximum cost = 1, following the
+same numerical scale adopted in deﬁning the other cost
+factors. Users can choose to increase/decrease the scalingfactor and the maximum bound following their preferences.
+Food-meal compatibility cost Each food is associated a
+food-meal compatibility cost, determined by expert nutri-
+tionists to express the food’s best ﬁt in the meal planning
+task. Similar to the food preference cost, we adopt commonsense linguistic qualiﬁers in describing food-meal com-
+patibility as follows:
+C
+3i;jðÞ ¼ cFoodMeal food i;meal j/C0/C1
+¼0 if compatibility is very likely
+0:25 if compatibility is likely
+0:5 if compatibility is somehow likely
+0:75 if compatibility is unlikely
+1 if compatibility is very unlikely8
+>>>><
+>>>>:9
+>>>>=
+>>>>;
+20;1½/C138
+ð15Þ
+Numerical values are heuristically deﬁned in accord
+with the previous two cost scores deﬁned above, and arenormalized [[0, 1].
+Inter-food compatibility cost This cost parameter des-
+ignates the compatibility between foods assigned to thesame meal. Given a food item food
+ithat is considered for
+inclusion in meal j, we deﬁne the inter-food compatibility
+cost of food iin meal jas the average compatibility cost
+relating food iwith all food items food i0=1, 2, 3, …,kalready
+assigned to meal j:
+c4i;jðÞ ¼ cInterFood food i;meal j/C0/C1
+¼Xk
+i0¼1cInterFood food i;food i0 ðÞ
+k20;1½/C138 ð 16Þ
+here the compatibility cost factor between two individual
+food items, cInter-Food (food i, food i0), represents the distance
+separating the foods in a certain referential space. Tocompute the latter, we build a dedicated food graph con-
+necting foods following their direct compatibility rela-
+tionship identiﬁed by nutrition experts
+11(cf. Fig. 2). If food
+items are directly connected in the graph (inter-dis-
+tance = 1 edge), it means they are directly compatible
+together. And if the foods are not directly connected, we
+11The food compatibility graph was developed with the help of Dr.
+Maya Bassil (Associate Professor of Human Nutrition in the Depart-ment of Natural Sciences at LAU) and Ms. Eva-Maria Kahwaji(M.Sc. in Sports and Exercise Nutrition at Loughborough University).2572 G. Salloum, J. Tekli
+123navigate the graph to identify the shortest distance between
+them highlighting their (indirect) compatibility.
+The distance between two food nodes in the graph is
+identiﬁed using an adaptation of the Dijkstra shortest path
+computation algorithm (Cormen et al. 2009 ). We multiply
+distance by a scaling factor bto reduce it to the same scale
+adopted by the other cost factors. More formally, the inter-
+food compatibility cost between two individual food itemsis deﬁned as:
+cInter/C0Foodfood i;food i0 ðÞ ¼ Dist i;i0ðÞ /C0 1 ðÞ /C2 b
+¼0 if compatibility is very likely
+0:25 if compatibility is likely
+0:5 if compatibility is somehow likely
+0:75 if compatibility is unlikely
+1 if compatibility is very unlikely8
+>>>>>><
+>>>>>>:9
+>>>>>>=
+>>>>>>;20;1½/C138
+ð17Þ
+where iandi0represent the graph node identiﬁers of the
+two food items being compared, and bis the distance
+scaling factor. We heuristically choose b’s initial value to
+be = 0.25 and bound the maximum distance at 5 (i.e., any
+distance [5 is reduced to 5), in order to produce occur-
+rence costs [{0, 0.25, 0.5, 0.75, 1} such that Dist( i,i0)=1
+(comparing a food with its direct neighbor12) produces
+minimal cost 0, Dist( i,i0) = 2 produces cost = 0.25, Dist( i,
+i0) = 3 produces cost = 0.5, Dist( i,i0) = 4 produces cost =
+0.75, and Dist(i,i0)C5 produces maximum cost = 1,
+following the same numerical scale adopted in deﬁning the
+other cost factors. Users can choose to increase/decrease
+the scaling factor and the maximum bound following theirpreferences.
+Note that every time a food is assigned to a meal, the
+corresponding cost values in the transportation matrix areupdated automatically based on the already assigned foods.
+In other words, the cost values are updated at each iteration
+of the transportation problem.
+13This simulates the human
+expert’s thought process: assigning foods while trying to
+match the next selected food with the already assigned
+ones.
+Example Consider two food items from the meat cate-
+gory: cottage cheese and poultry chicken; and two meals:
+breakfast and lunch . Also, consider that the carrot food
+item from category vegetable is already assigned to the
+lunch meal while no foods are assigned to breakfast yet.
+The detailed and total cost factor values for both cottagecheese and poultry chicken are shown in Table 4, and aredescribed below. Consider the cottage cheese food item
+with:
+c
+1=cFoodPref (cottage cheese) = 0.5 (i.e., patient is neu-
+tral toward cottage cheese).
+c2=cFoodOcc (cottage cheese) = 0 90.25 (i.e., no pre-
+vious occurrence the day before).c
+3=cFood-Meal (cottage cheese, breakfast) = 0.25 (i.e.,
+likely) and cFood-Meal (cottage cheese, lunch) = 0.5 (i.e.,
+somehow likely).c
+4=cInter-Food (cottage cheese, breakfast) = 1 (i.e.,
+breakfast does not include any foods yet) and cInter-
+Food(cottage cheese, lunch) = cInter-Food (cottage cheese,
+carrot) = (3-1)*0.25 = 0.5 (i.e., somehow likely—since
+cottage cheese has a distance of 3 from carrot following
+our food compatibility graph, cf. Fig. 2)
+Consider the poultry chicken food item with:
+c1=cFoodPref (poultry chicken) = 0.25 (i.e., patient likes
+poultry chicken).
+c2=cFoodOcc (poultry chicken) = 1 90.25 (i.e., one
+previous occurrence)
+c3=cFood-Meal (poultry chicken, breakfast) = 1 (i.e., very
+unlikely) and cFood-Meal (poultry chicken, lunch) = 0 (i.e.,
+very likely).
+c4=cInter-Food (poultry chicken, breakfast) = 1 (i.e., since
+breakfast does not include any foods yet) and c Inter-
+Food(poultry chicken, lunch) = c Inter-Food (poultry chicken,
+carrot) = (1 -1) * 0.25= 0 (i.e., very likely—since
+lunch includes carrots already, and poultry chicken is atdistance of 1 from carrots following our food compat-
+ibility graph, cf. Fig. 2)
+Following the above cost computations, and considering
+equal cost factor weights when computing c
+Average , poultry
+chicken will be assigned to lunch in the next iteration sinceit produces the lowest cost. After each selection, the inter-
+food compatibles will be updated dynamically for foods
+that can still supply before performing the next selection.The weights assigned to each cost factor can be modiﬁed to
+favor certain factors among others, and thus modify the
+decision-making process accordingly. For example, byincreasing the weight factor for food-occurrence (c
+2) and
+reducing other weight factors, cottage cheese could be
+assigned to lunch instead of poultry chicken. This alterationof weight factors allows determining multiple approaches
+for meal planning following the user’s needs.
+4.4.5 Solving the transportation matrix
+Solving the transportation matrix comes down to ﬁnding
+the number of supply units (i.e., number of servings) to be
+transported from supply center (source) food
+ito demand12Note that Dist(i,i’) = 0 will never occur in our computations since
+it amounts to comparing a food with itself.
+13This is different from having static cost values that remain
+unchanged throughout the whole computation process of typicaltransportation problem solutions.Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2573
+123center (destination) meal jsuch that the total transportation
+cost is minimum:
+minXm
+i¼1Xn
+j¼1xi;jðÞ/C2ci;jðÞ ð18Þ
+where xi,jrepresents the number of servings supplied from
+food ito meal j, and ci,jthe cost of delivering one serving
+from food ito meal j. The latter should be achieved while
+satisfying the following constraints: (i) the total amount of
+food servings supplied from a supply center (food) mustnot exceed the available supply amount (cf. Formula 19),
+and (ii) the total amount of servings supplied to a demand
+center (meal) must not exceed the required demand (cf.Formula 20):
+X
+n
+j¼1xi;jðÞsifor all i¼1;...;m ð19Þ
+Xm
+i¼1xi;jðÞDj/C131!:difor all j¼1;...;n ð20Þ
+where sirepresents the supply (i.e., available number of
+servings) for supply center food i, and Dj/C131!.dithe demand
+(i.e., number of required servings) for demand center meal j
+from food i’s category14cati.Following transportation problem literature, e.g., (Hira
+and Gupta 2014 , Winston and Venkataramanan 2003 ),
+when the total demand is equal to the total supply, the
+transportation problem is said to be balanced . If the
+demand exceeds the supply, then the problem cannot besolved. If the supply exceeds the demand, then the problem
+can be solved by adding a dummy demand center where the
+demand of this center is equal to the total excess supply,thus making the transportation problem balanced. In our
+approach, we consider the supply constraint introduced in
+the adapted vector-based model presented in Sect. 4.4.2,which states that the supply center (i.e., food) is capable of
+supplying all the requirements of the demand center (i.e.,
+meal). As for the computational process to solve thetransportation problem, we use the minimum (least) cost
+method widely adopted in the literature, e.g., (Hira and
+Gupta 2014 , Winston and Venkataramanan 2003 ). We
+brieﬂy describe the process as follows: (i) assign as much
+supply units as possible to the cell with the smallest unit
+cost in the entire matrix, (ii) cross-out the row where thesupply center has supplied all available supply centers, (iii)
+cross-out the column where the demand center’s demands
+were satisﬁed, (iv) adjust the supply and demand for those
+rows and columns which are not crossed based on the
+amount of units supplied, and (v) assign the remainingunits to the feasible allocations when exactly one row or
+one column is left. Note that other approaches can be used
+to solve the transportation problem, such as penalty-based
+orcorrection-based methods (Hira and Gupta 2014 ).
+Fig. 2 Extract of our food compatibility graph (the complete graph is provided in (Salloum and Tekli 2020 ))
+Table 4 Food assignment
+exampleCosts of breakfast meal Costs of lunch meal
+c1 c2 c3 c4 Average c1 c2 c3 c4 Average
+Cottage cheese 0.5 0 0.25 1 0.4375 0.5 0 0.5 0.5 0.375
+Poultry chicken 0.25 0.25 1 1 0.625 0.25 0.25 0 0 0.125
+14Recall that that Dj/C131!=(d1,d2,d3,d4,d5,d6) represents a
+6-dimentional vector where every dimension corresponds to one of
+the 6 categories of basic foods considered in our study, cat1-to-cat6
+(i.e., starch, fruits, milk, vegetables, lean meat, and fat).2574 G. Salloum, J. Tekli
+1234.4.6 Running example
+A sample meal plan produced for our CI = 2107 Kcals
+running example is presented in Fig. 3. We assume equal
+cost factors wi= 0.2Vi[{1, 2, 3, 4, 5}, and consider that
+the patient preference toward all foods is neutral (i.e., c1-
+=cFoodPref = 0.5). Here, we explain the ﬁrst iteration of
+the process considering an extract of the transportationmatrix consisting of two meals and nine food items shown
+in Table 5, where the cost of assigning every food at every
+meal is computed based on the description of the runningexample provided in Table 2.
+In the ﬁrst iteration, we ﬁnd the minimal cost of sup-
+plying a demand center (meal) from a supply center (food)and we check if the provided supply vector meets the
+demand vector. Ties are broken randomly to insure variety.
+Consider that rice cake $snack two is selected in the ﬁrst
+iteration (cf. Table 5a). Since we need 3 servings of starch
+in snack two and given that rice cake includes 2 servings
+only, the latter 2 servings will be supplied from rice cakeand then it will be marked as no longer having any supply.
+Subsequently, the demand vector will be updated in the
+second iteration to reﬂect that only 1 serving of starch isnow needed (cf. Table 5b). As a result of assigning rice
+cake to snack two, all food costs will be recomputed w.r.t.
+snack two based on the food graph connections betweenthe food items and rice cake in this case. If a food is not
+connected to rice cake, its cost will remain the same and
+will not be reduced. The same process is repeated in thesecond iteration until all the demands are met (cf. Fig. 3).
+4.5 Meal plan self-evaluation component
+As described previously, MPG’s meal plan generation
+process is designed in a ﬂexible manner that offers thepatient a variety of healthy meal plans to choose from,
+similarly to a human nutritionist’s way of recommending
+multiple healthy solutions. Yet, providing various optionscould become confusing for the patient, if not presented
+properly. To address this issue, we introduce a relevance
+function to rank the generated meal plans w.r.t. the costfactors considered previously:
+Rel
+Total MPðÞ ¼X4
+i¼1wi/C2Rel iMPðÞ 2 0;1½/C138 ð 21Þ
+where MP is a generated meal plan being evaluated, Rel i
+the relevance function of each cost factor, and withe
+weight assigned to each cost factor such that 8wi[[0, 1]
+andP4
+i¼1wi¼1. The weight factors are the same used in
+solving the transportation problem and can be ﬁne-tuned
+following patient preferences.As for the individual relevance functions, we compute
+them as the inverse of an error rate comparing the actual
+meal plan score with the best possible meal plan score
+considering every individual factor:
+Rel iMPðÞ ¼ 1/C0score iMPðÞ /C0 score iMP MaxðÞ jj
+max score iMPðÞ ;score iMP maxðÞ ðÞ20;1½/C138
+ð22Þ
+where score i(MP) represents the score of meal plan MP
+w.r.t. cost factor i, and score i(MP Max) the score of the
+‘‘best’’ meal plan that can be generated following the
+considered factor i.The best meal plan MP Maxfollowing a
+certain factor iis generated by running the system while
+setting the weight of the considered factor wi= 1, with all
+other cost factor weights being set to 0.15This insures that
+the system performs a relative and fair evaluation against
+the best meal plans that can be generated from the foods
+available in stock. Rel i(MP) will reach its maximum (= 1)
+value when the generated meal plan scores the same as the
+best possible meal plan, and will decrease (and tend to
+minimum = 0) as the generated meal plan score deviatesfrom the best possible score. We describe each of the
+individual relevance scores in the following subsections.
+4.5.1 Food preference score
+This score evaluates how much the produced meal plan
+meets the patient food preferences, and is computed as the
+inverse of the overall average preference cost for every
+food item selected in the meal plan:
+score
+1MPðÞ ¼ score FoodPref MPðÞ ¼ 1/C0Xm
+i¼1cFoodPref food i ðÞ
+m
+20;1½/C138
+ð23Þ
+where mis the total number of foods considered in the
+target meal plan MP, and cFoodPref (food i) is the preference
+cost for food item food i. The value of score FoodPref (MP)
+will increase/decrease in a manner which is inversely
+proportional to the average food preference cost, and willreach maximum (= 1)/minimum (= 0) values when the
+average cost is minimal/maximal, respectively.
+4.5.2 Food occurrence score
+This score evaluates the relevance of the generated meal
+plan in terms of food occurrence repetitions, and is
+15MPG can generate multiple different MP Maxsolutions for the same
+cost factor, considering the nature of our computation process. Hence,
+we perform multiple runs for every individual factor separately,compute the score of each produced MP
+Maxsolution in each run, and
+then average them out to produce score (MP Max).Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2575
+123computed as the inverse of the overall average occurrence
+cost for every food item selected in the meal plan, wherethe costs are produced at the time of the generation of the
+meal plan based on the previously selected foods:
+score
+2MPðÞ ¼ score FoodOcc MPðÞ ¼ 1/C0Xm
+i¼1cFoodOcc food i ðÞ
+m
+20;1½/C138
+ð24Þ
+where mis the total number of foods considered in the
+target meal plan MP, and cFoodOcc (food i) is the occurrence
+cost for food item food i. The value of score FoodOcc (MP)
+will increase/decrease in a manner which is inversely
+proportional to the average food occurrence cost of the
+target meal plan, and will reach maximum (= 1)/minimum(= 0) values when the average cost is minimal/maximal,
+respectively.
+4.5.3 Food-meal compatibility score
+This score evaluates how much the foods are compatible
+with their assigned meals in the generated meal plan, and is
+computed as the inverse of the overall average food-meal
+compatibility cost for every food item selected in the mealplan:
+score
+3MPðÞ ¼ score FoodMeal MPðÞ
+¼1/C0Xm
+i¼1cFoodMeal food i;meal j/C0/C1
+m20;1½/C138
+ð25Þwhere mis the total number of foods considered in the
+target meal plan MP, and c Food-Meal (food i, meal j) is the
+food-meal compatibility cost for food item food ioccurring
+inmeal jof meal pan MP. The value of score FoodMeal (MP)
+will increase/decrease in a manner which is inversely
+proportional to the average food-meal compatibility cost of
+the target meal plan, and will reach maximum (= 1)/min-imum (= 0) values when the average cost is mini-
+mal/maximal, respectively.
+4.5.4 Inter-food compatibility score
+This score evaluates how much the foods are compatible
+with each other in the generated meal plan, and is com-
+puted as the inverse of the overall average inter-food
+compatibility cost for every pair of food items selected inthe meal plan:
+score
+4MPðÞ ¼ score InterFood MPðÞ
+¼1/C0Xp
+i¼1cInterFood food i;food i0 ðÞ
+p20;1½/C138
+ð26Þ
+where pis the total number of food item pairs considered in
+the target meal plan MP ( p¼m/C2m/C01ðÞ
+2where mis the
+number of food items in MP), and c Food-Meal (food i, food i0)
+is the inter-food compatibility cost for food items food iand
+food i’occurring in MP. The value of score InterFood (MP) will
+increase/decrease in a manner which is inversely propor-tional to the average inter-food compatibility cost of theMeal Food item # of Servings Serving size
+BreakfastBread, whole grain 2 1 slice (28 grams)
+Oil: canola, olive, 1 1 tea spoon
+Cottage cheese 2 1/4 cup
+Peanuts 1 10 nuts
+Carrot 1 One piece (60 grams)
+Milk 1 1 cup
+Snack oneJam 1 1 table spoon
+Biscuit 1 1 piece
+Peanut Butter 1 1/2 table spoon
+LunchGreen peas 4 1/2 a cup
+Carrot 1 One piece (60 grams)
+White rice, cooked 1 1/3 cup
+Oil: canola, olive 2 1 tea spoon
+Lamb: chop, leg or roast 4 28 grams
+Strawberries 1 1.25 cup
+Snack twoBlueberries 1 3/4 cup
+Rice cake 2 2 pieces
+Biscuit 1 1 piece
+DinnerWhite rice, cooked 2 1/3 a cup
+Lamb: chop, leg or roast 3 28 grams
+Olives 1 8 pieces
+Carrot 1 1 piece (60 grams)Fig. 3 Sample meal plan
+obtained based on our runningexample2576 G. Salloum, J. Tekli
+123target meal plan, and will reach maximum (= 1)/minimum
+(= 0) values when the average cost is minimal/maximal,respectively.
+4.5.5 Running exampleConsider in Fig. 4an extract of our running example meal
+plan from Fig. 3, consisting of two meals: snack two and
+dinner , and their constituent food items. For clarity of
+presentation, we demonstrate how the different relevance
+scores for each of the cost factors are generated using this
+extract meal plan (computations for the complete running
+example are provided in (Salloum and Tekli 2020 ))
+(Table 6).
+Considering the transportation matrix in Table 7, pro-
+duced at meal plan generation time, the extract meal plan’sindividual scores for each cost factor are computed as
+follows:•Food preference score
+FoodPref MP ExtractðÞ ¼ 1/C0
+Pm
+i¼1cFoodPref food i ðÞ
+m¼1/C00:25þ0:25þ0:5þ0þ0:5þ0:75þ0
+7¼
+0:68
+•Food occurrence: score FoodOcc MP ExtractðÞ ¼ 1/C0
+Pm
+i¼1cFoodOcc food i ðÞ
+m¼1/C00:5þ0:25þ0þ0þ0:5þ0þ0
+7¼0:82
+•Food-meal compatibility: score FoodMeal MP ExtractðÞ ¼
+1/C0Pm
+i¼1cFoodMeal food i;meal j ðÞ
+m
+¼1/C00:5þ0þ0þ0þ0þ0þ0:5
+7¼0:86
+•Inter-food compatibility: score InterFood MP ExtractðÞ ¼
+1/C0Pp
+i¼1cInterFood food i;foodi0 ðÞ
+p¼
+1/C01þ1þ1þ0þ0:25þ0:25þ0:5þ0:25þ0:25
+9¼0:5 Considering
+the following scores produced for the best possible
+meal plans for every individual cost factor16:Table 5 Extract transportation
+matrices highlighting the ﬁrst
+iteration of the computation
+processDemand Snack Two Dinner Supply
+D~¼0;0;1;3;0;0 ðÞ D~¼0;1;0;1;2;2 ðÞ
+a. Input of Iteration #1
+Bread, whole grain 0.9 0.75 2*S~¼0;0;0;1;0;0 ðÞ
+Milk 0.75 0.75 2*S~¼0;0;0;1;0;0 ðÞ
+Biscuit 0.25 0.75 1*S~¼0;0;0;1;0;0 ðÞ
+Green peas 1 1 2*S~¼0;0;0;1;0;0 ðÞ
+Carrot 0.75 0.5 2*S~¼0;0;0;1;0;0 ðÞ
+White rice, cooked 1 0.5 5*S~¼0;0;0;1;0;0 ðÞ
+Lamb: chop, leg or roast 1 0.5 3*S~¼0;0;0;1;0;0 ðÞ
+Strawberries 0.75 1 5*S~¼0;0;0;1;0;0 ðÞ
+Blueberries 0.5 0.5 5*S~¼0;0;0;1;0;0 ðÞ
+Rice cake 0.25 0.75 2*S~¼0;0;0;1;0;0 ðÞ
+Olives 0.75 0.25 2*S~¼0;0;0;1;0;0 ðÞ
+b. Output of Iteration #1 (used as input for Iteration #2)Bread, whole grain 0.85 0.75 2*S~¼0;0;0;1;0;0 ðÞ
+Milk 0.7 0.75 2*S~¼0;0;0;1;0;0 ðÞ
+Biscuit 0.25 0.75 1*S~¼0;0;0;1;0;0 ðÞ
+Green peas 1 1 2*S~¼0;0;0;1;0;0 ðÞ
+Carrot 0.75 0.5 2*S~¼0;0;0;
+1;0;0 ðÞ
+White rice, cooked 0.925 0.5 5*S~¼0;0;0;1;0;0 ðÞ
+Lamb: chop, leg or roast 0.925 0.5 3*S~¼0;0;0;1;0;0 ðÞ
+Strawberries 0.7 1 5*S~¼0;0;0;1;0;0 ðÞ
+Blueberries 0.465 0.5 5*S~¼0;0;0;1;0;0 ðÞ
+Rice cake 0.25 ?2 supplied 0.75 2*S~¼0;0;0;1;0;0 ðÞ
+Olives 0.725 0.25 2*S~¼0;0;0;1;0;0 ðÞ
+16The scores for the best possible meal plans are computed experimen-
+tally, considering a pool of 15 experimental runs where the produced scorefor every individual cost factor is computed as the average of the maximumscores obtained in every experimental run (cf. Sect. 5).Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2577
+123score FoodPref (MP Max) = 1, score FoodOccf (MP Max)=1 ,
+score FoodMeal (MP Max) = 0.96, and score InterFood (-
+MP Max) = 82, we compute MP Extract ’s relevance func-
+tions as follows:
+•Food preference: Rel FoodPref MP ExtractðÞ ¼ 1/C0
+0:68/C01 jj
+1¼0:68
+•Food occurrence: Rel FoodOcc MP ExtractðÞ ¼ 1/C0
+0:82/C01 jj
+1¼0:82
+•Food-meal compatibility: Rel FoodMeal MP ExtractðÞ ¼ 1/C0
+0:86/C00:96 jj
+0:96¼0:90
+•Inter-food compatibility: Rel InterFood MP ExtractðÞ ¼ 1/C0
+0:5/C00:82 jj
+0:82¼0:61
+The overall relevance function for MP Extract considering
+equal weights for all cost factors ( w1tow4= 0.25) is
+computed as:
+•Overall relevance:
+Rel Total MP ExtractðÞ ¼X4
+i¼1wi/C2Rel iMP ExtractðÞ ¼ 0:7525
+To sum up, the self-evaluation results show that meal
+plan MP Extract is considered 0.68% relevant in terms of
+food preferences, 0.82% relevant in terms of foodoccurrences, 0.90% relevant in terms of food-meal com-
+patibility, and 0.61% relevant in terms of inter-food com-
+patibility. All in all, the system considers MP Extract to be
+&0.75% relevant considering all factors combined with
+equal weights. Recall that the latter are internal relevance
+scores produced by the MPG agent itself, allowing it to rate
+and rank the generated meal plans following their rele-vance w.r.t. patient chosen factors.
+5 Experimental evaluation
+We have implemented our MPG agent as part of the Per-
+sonal Intelligent Nutritionist (PIN) framework (Salloum
+and Tekli 2021 ), which aims at automating the full nutri-
+tion health recommendation process: starting from health
+assessment and caloric intake (CI) recommendations, to
+physical exercise recommendation and adjustment, leadingto meal plan generation through MPG .
+17We have empir-
+ically tested MPG using three sets of experiments covering:
+(i) patient preference satisfaction: evaluating MPG’s abilityto generate meal plans that satisfy patient food preferences
+and occurrence variety, (ii) meal plan quality: evaluatingMeal Food item # of Servings Serving size
+Snack twoBlueberries 1 3/4 cup
+Rice cake 2 2 pieces
+Biscuit 1 1 piece
+DinnerWhite rice, cooked 2 1/3 a cup
+Lamb: chop, leg or roast 3 28 grams
+Olives 1 8 pieces
+Carrot 1 1 piece (60 grams)Fig. 4 Extract meal plan
+MP Extract taken from our
+running example in Fig. 3
+Table 6 Sample transportation matrix considering meal plan MP Extract from Fig. 4
+Food Food preference cost Food occurrence cost Food-meal compatibility cost Inter-food compatibility cost
+With snack two With dinner Cost
+Blueberries 0.25 0.5 (occ = 2) 0.5 0.5 Rice cake = 1 (dist = NA)
+Biscuit = 1 (dist = 8)
+Rice cake 0.25 0.25 (occ = 1) 0 1 Biscuit = 1 (dist = NA)
+Biscuit 0.5 0 (occ = 0) 0 1 –White rice 0 0 (occ = 0) 1 0 Lamb = 0 (dist = 1)
+Olives = 0.25 (dist = 2)
+Carrot = 0.25 (dist = 2)
+Lamb 0.5 0.5 (occ = 2) 1 0 Olives = 0.5 (dist = 3)
+Carrot = 0.25 (dist = 2)
+Olives 0.75 0 (occ = 0) 1 0 Carrot = 0.25 (dist = 2)Carrot 0 0 (occ = 0) 0 0.5 –
+17This paper describes MPG , while PIN’s remaining modules are
+developed in (Salloum G. and Tekli J., 2020).2578 G. Salloum, J. Tekli
+123MPG’s ability to generate ‘‘healthy’’ meal plans following
+nutrition experts, and (iii) cost weight variation: evaluating
+the effect of changing the cost weight factors on the agent’s
+self-evaluation component. A total of 9 human testers: 4nutrition experts and 5 non-experts (patients) were
+involved in the experiments. Experimental results are
+described and discussed in the below sub-sections. Thesystem implementation, experimental data, and test results
+are available online.
+18
+5.1 Experiment 1: patient preference satisfaction
+evaluation
+The objective of this experiment is to evaluate MPG ’s
+ability to generate meal plans that satisfy patient prefer-
+ences. To do so, we provide every non-expert tester (pa-tient) with 4 sets of 3 day meal plans where every set
+targets the CI needs and cost factor preferences set by the
+testers themselves. The testers are then asked to evaluateand rate their satisfaction of the generated meal plans on an
+integer scale from 0 (strong disagreement) to 4 (strong
+agreement), by considering two criteria: (i) food preference
+satisfaction, i.e., if the foods selected meet the preferencesset by the tester, and (ii) food occurrence variety: if the
+daily meal plans have a variety of non-repetitive foods that
+satisfy the tester for every daily meal plan. Figure 5shows
+the tester rating scores averaged for every evaluation cri-
+terion over the 3 days covered by the meal plans.
+Results show that MPG fairly satisﬁes tester food pref-
+erence and food occurrence variety, producing an overall
+average rating of 3.27 with an average standard deviation
+of 0.49. MPG seems to perform slightly better in satisfyingfood occurrence variety with an average rating of 3.47,
+compared with food preference with an average rating of
+3.07. The latter results can be further improved byincreasing the size of the food graph considered in our
+study (it currently consists of 56 food items, cf. Fig. 2),
+which would provide the testers with a larger selection offood items that meet their preferences.Table 7 MPG ’s self-evaluation results considering different CI requirements and cost factor conﬁgurations
+Caloric intakes Food preference Food occurrence Meal-food compatibility Inter-food compatibility
+a. Set 1 (food preference factor is emphasized)
+1200 1.00 0.55 0.83 0.851600 1.00 0.64 0.77 0.712000 1.00 0.63 0.76 0.822400 1.00 0.63 0.76 0.75b. Set 2 (food occurrence factor is emphasized)1200 0.93 1.00 0.81 0.801600 0.87 1.00 0.88 0.722000 0.85 1.00 0.88 0.812400 0.90 1.00 0.86 0.76c. Set 3 (food-meal compatibility factor is emphasized)
+1200 0.83 0.65 1.00 0.81
+1600 0.84 0.73 1.00 0.682000 0.82 0.73 1.00 0.772400 0.85 0.75 1.00 0.78d. Set 4 (inter-food compatibility factor is emphasized)1200 0.93 0.70 0.85 0.981600 0.90 0.61 0.90 0.802000 0.91 0.70 0.88 0.922400 0.88 0.68 0.92 0.86e. Set 5 (all factors are equally emphasized)1200 0.90 0.86 0.91 0.861600 0.90 0.87 0.92 0.752000 0.90 0.88 0.90 0.862400 0.90 0.85 0.90 0.79
+18http://sigappfr.acm.org/Projects/PIN/ .Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2579
+1235.2 Experiment 2: meal plan quality evaluation
+The objective of this experiment is to evaluate MPG’s
+ability to generate healthy meal plans. To do so, we sought
+the participation of 4 nutrition experts who volunteered toparticipate in this experiment. Each expert is provided 4
+sets of 3 day meal plans, where every set targets one of the
+following 4 typical patient caloric intake (CI) require-ments: 1200, 1600, 2000, and 2400 Kcals.
+19Every set is
+divided in two equal groups (referred to as A and B) fol-
+lowing the nature of the food items involved: (i) group A:basic foods only (e.g., bread, milk, apples), and (ii) group
+B: basic and composite foods (e.g., pizza, hamburger,
+lasagna). The latter is necessary to evaluated MPG’s abilityof matching foods of different natures, especially when
+involving meal-food compatibility and inter-food compat-
+ibility factors. The meal plans are generated using equalweights assigned to all cost factors. The expert testers are
+asked to evaluate the quality (i.e., healthiness) of the meal
+plans by considering three criteria: (i) food occurrencevariety: if the meal plans have a variety of non-repetitive
+foods, (ii) food-meal compatibility: if the foods are cor-
+rectly assigned to the meals, and (iii) inter-food compati-bility: if the foods are matched well together within the
+same meal.
+20Testers are asked to rate every criterion on an
+integer scale from 0 (strong disagreement) to 4 (strongagreement). Figures 6,7, and 8show the quality ratings for
+meal plans including basic foods only (group A), basic and
+composite foods (group B), and all foods combined (groupA and B). Rating scores are averaged for every evaluation
+criterion, considering expert tester scores produced over
+the 3 days covered by the meal plans.
+Results show that MPG performs well, producing an
+overall quality rating of 2.67 by averaging the results of the
+four CI requirements (i.e., 1200, 1600, 2000, and 2400) andthe three evaluation criteria (e.g., food occurrence variety,
+food-meal compatibility, and inner-food compatibility) for
+both basic foods only and basic and composite foodscombined, with an average standard deviation of 0.57.
+More speciﬁcally, we make the following observations:
+•MPG seems to perform slightly better for meal plans
+consisting of basic foods only (group A, producing a
+higher average rating score of 2.73 considering all CIrequirements and all evaluation criteria combined)
+compared with plans including basic and composite
+foods(group B, with avg. = 2.45). We also noticehigher standard deviation levels for group B (std.
+dev. = 0.65 considering all CI requirements and allevaluation criteria combined, versus std. dev = 0.50 for
+group A), highlighting a wider diversity of opinions
+among testers when composite foods are included in theevaluation process.
+•Considering both groups A and B (cf. Figure 8), MPG
+seems to perform best when evaluating food occurrencevariety (avg. = 2.98 considering all CI requirements for
+both basic foods only and basic and composite foods
+combined), followed by meal-food compatibility(avg. = 2.74) and then inter-food compatibility (avg. =
+2.30). The lower scores for inter-food compatibility
+can be attributed to the food compatibility graph used asreference for computing food compatibility scores (cf.
+Sect. 4.4.3). The graph was constructed with the help of
+two nutrition experts who are different from the oneswho participated in the evaluation process. Here,
+subjectivity in matching food items could be a key
+factor affecting the results, especially since differentexperts might have different opinions concerning food
+compatibility. A possible approach would to allow the
+patients to deﬁne their own personal food matchings,instead of relying on a pre-deﬁned food graph, which
+would produce more personalized inter-food compati-
+bility results.
+5.3 Experiment 3: cost weight variation
+evaluation
+In this experiment, we vary the weights of the cost factors
+considered in our approach, and evaluate their effect onMPG ’s meal plan self-evaluation component (cf. Sect. 0).
+We consider 5 sets of meal plans generated using the fol-
+lowing weight conﬁgurations:
+•Set 1 w
+FoodPref = 0.7 and wFoodOcc =wFoofMeal =wIn-
+terFood = 0.1, where the food preference factor is
+emphasized over the others,
+•Set 2 w FoodOcc = 0.7 and wFoodPref =wFoofMeal =wIn-
+terFood = 0.1, where the food occurrence factor is
+emphasized,
+•Set 3 w FoodMeal = 0.7 and wFoodPref =wFoodOcc =wIn-
+terFood = 0.1, where the food-meal compatibility factor
+is emphasized,
+•Set 4 w InterFood = 0.7 and wFoodPref =wFoodOcc-
+=wFoofMeal = 0.1, where the inter-food compatibility
+factor is emphasized,
+•Set 5 w FoodPref =wFoodOcc =wFoodMeal =wInterFood-
+= 0.25, where all factors are emphasized and assigned
+equal weights,19The CI requirement cases considered in this experiment are chosen
+based on common practices in health nutrition literature (Kathleen
+and Janice 2017 ).
+20Note that the food preference criterion does not reﬂect meal plan
+healthiness, and is evaluated by non-expert testers in Experiment 2(Sect. 5.2).2580 G. Salloum, J. Tekli
+123Every set is made of 20 meal plans (i.e., totaling 100
+meal plans all-in-all), generated for each of the typical CIrequirements considered in the previous experiments:
+1200, 1600, 2000, 2400 Kcals. We do not distinguish
+between basic foods only and basic and composite foods inthis experiment since they do not make a difference in this
+evaluation: they both ﬁt as supply vectors in the trans-
+portation problem where the same cost factors produce thesame numerical results. Table 7shows MPG ’s meal plan
+self-evaluation results for individual cost factors, andFig. 9depicts the corresponding average and standard
+deviation results.
+Relevance levels for most test sets show consistent and
+high quality results across all CI requirement categories
+and cost factor conﬁgurations, highlighting MPG’s self-evaluation performance. More speciﬁcally, we highlight
+the following observations:
+•Set 1 emphasizing food preference :MPG produces
+maximum relevance scores (= 1) for the mentioned
+factor compared with the others, and this is achieved 
+ 
+  
+ 3.33
+2.673.33
+2.673.334.00
+3.004.00
+3.003.33
+01234
+Pa/g415ent 1 Pa/g415ent 2 Pa/g415ent 3 Pa/g415ent 4 Pa/g415ent 5Average ra/g415ngs (and stdev) 
+Food Preference Food Occurrence Variety3.073.47
+01234
+Average
+Fig. 5 Average non-expert tester ratings evaluating their satisfaction with the generated meal plans
+ 
+ 
+  
+ 2.92
+3.25
+3.33
+2.412.92
+3.50
+2.67
+2.332.75
+3.17
+2.42
+1.83
+01234
+1200 1600 2000 2400Average ra/g415ngs (and stdev)
+CI requirements
+Food Occurrence Variety Food-Meal Compa/g415bility Inner-Food Compa/g415bility
+2.98
+2.85
+2.54
+01234
+Average
+Fig. 6 Average expert tester ratings evaluating the quality of meal plans including basic foods only (group A)
+ 
+ 
+  
+ 3.08
+3.17
+2.92
+2.753.08
+3.00
+2.42
+2.002.25
+2.17
+2.08
+1.75
+01234
+1200 1600 2000 2400Average ra/g415ngs (and stdev)
+CI requirements
+Food Occurrence Variety Food-Meal Compa/g415bility Inner-Food Compa/g415bility
+2.98
+2.63
+2.06
+01234
+Average
+Fig. 7 Average expert tester ratings evaluating the quality of meal plans including basic and composite foods (group B)Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2581
+123consistently throughout all four CI requirements (cf.
+Table 7a).
+•Set 2 emphasizing food occurrence : MPG produces
+maximum relevance scores (= 1) for the mentioned
+factor, compared with the other factors across all CIrequirement categories. We also notice that relevance
+score for food preference is signiﬁcantly improved with
+the smallest CI requirement of 1200 Kcals, comparedwith the other CI requirements (cf. Table 7b) This is
+because a small CI requirement produces a reduced
+number of foods per meal plan, which in turn increases
+the probability of choosing foods that match the patient
+preferences. In fact, choosing less foods from the foodgraph while limiting repetitive choices (e.g., the same
+food should not be selected in consecutive days)
+increases the probability of having more convenientfoods (that the patient likes and which are compatible
+with the meals and with each other) allowing to fulﬁl
+the demands of the meal plan. However as CIrequirements increase, so does the number of foods to
+be included per meal plan, which reduces the probabil-
+ity of ﬁnding non-repeating foods that satisfy thepreference of the patient. In addition, we notice a
+signiﬁcant increase in meal-food compatibility from Set1 to Set 2 (cf. Fig. 9). This can be attributed to the fact
+that the food occurrence factor is less restrictive on the
+foods being assigned to a certain meal, where any food
+can be assigned to a meal as long as it has not occurred
+enough times previously. In contrast, the food prefer-
+ence factor is stricter on food assignments, and might
+induce sub-optimal food assignments simply because
+the foods are highly preferred by the patient.
+•Set 3 emphasizing food-meal compatibility: MPG
+produces maximum relevance scores (= 1) for the
+mentioned factor compared with the other factors across
+all CI requirement categories. Relevance scores for the
+other factors vary between 0.71 for food occurrence and0.84 for food preference, which we consider as fair
+scores given that these factors are not emphasized in
+this experimental run.
+•Set 4 emphasizing inter-food compatibility: MPG
+produces consistently high scores for the mentioned
+factor across all CI requirement categories. Yet, theproduced scores are sometimes slightly surpassed by
+other factors (like food preference and food-meal
+compatibility for CI = 1600 Kcals, and food preferencefor CI = 2400 Kcals, cf. Table 7d). Following our
+discussion with nutrition experts, this result resonates 
+ 
+  3.00
+3.21
+3.13
+2.583.00
+3.25
+2.54
+2.172.50
+2.67
+2.25
+1.79
+01234
+1200 1600 2000 2400Average ra/g415ngs (and stdev)
+Food Occurrence Variety Food-Meal Compa/g415bility Inner-Food Compa/g415bility
+2.98
+2.74
+2.30
+01234
+Average
+Fig. 8 Average expert tester ratings evaluating the quality of meal plans considering both basic foods only (group A) and basic and composite
+foods (group B) combined
+ 
+ 
+  
+ 1.00
+0.89
+0.84
+0.91
+0.900.61
+1.00
+0.71
+0.67
+0.860.78
+0.86
+1.00
+0.89
+0.910.78
+0.77
+0.76
+0.89
+0.82
+0.00.20.40.60.81.0
+Set 1 Set 2 Set 3 Set 4 Set 5Average Relevance Scores
+(and stdev)
+Food Preference Food Occurrence Meal-Food Compa/g415bility Inter-Food Compa/g415bility
+0.91
+0.77
+0.89
+0.80
+0.00.20.40.60.81.0
+Average
+Fig. 9 MPG’s self-evaluation results averaged for each cost factor conﬁguration2582 G. Salloum, J. Tekli
+123with manual meal planning where it is very unlikely to
+match all items in a meal—one-to-one—in an optimalway, especially when CI grows and the meal grows in
+size accordingly. We also notice relatively high
+relevance scores for food preference (average = 0.9)and meal-food compatibility (average = 0.89, cf.
+Fig. 9). The former demonstrates that foods can be
+matched well together while meeting patient prefer-ences, while the latter can be attributed to the fact that
+foods that go well together are more likely to go well in
+the same meal.
+•Set 5 emphasizing all factors equally: MPG produces
+consistent (almost equal) scores and relevance levels for
+each factor across all CI requirement categories. Wealso notice that the average relevance score for each
+factor are within the same range of the optimized results
+for that category. This shows that a balanced weightconﬁguration combining all cost factors can result in
+meal plans where all factors are well satisﬁed without
+favoring one factor over the others.
+To sum up, this experiment provides a self-evaluation of
+MPG, showing that the system behaves as expected
+according to the weight factor choices made by the patient,where each factor can be individually emphasized, and all
+factors can be equally emphasized, following the patient’s
+weight factor preferences.
+6 Conclusion
+In this paper, we introduce a novel solution for Meal PlanGeneration titled MPG, allowing to automate the meal plan
+generation service offered by a nutrition expert. MPG
+allows to: (i) generate meal plans which fulﬁl a recom-mended caloric intake (e.g., nutrition demand) given a set
+of available foods (e.g., nutrition supply), while (ii) per-
+sonalizing the plans following patient chosen factors (e.g.,food preferences, compatibility, variety, and price), and
+(iii) evaluating their relevance following the patients’
+preferences. Experimental results reﬂect MPG’s effective-ness and quality in producing ‘‘healthy’’ and personalized
+meal plans which largely comply with human tester pref-
+erences. They also display MPG’s ability to accurately self-evaluate is own meal plans in order to provide the patients
+with a set of recommendations that ﬁt their needs.
+We are currently completing an extended study, build-
+ing on MPG ’s meal plan generation process to perform
+nutrition health monitoring and meal plan adjustment:
+assessing the patient’s health state evolution over time andrecommending adjusted meal plans accordingly (Salloum
+and Tekli 2021 ). In the near future, we aim to extend MPG
+to include exercise recommendations, providing patientswith the choice to follow leaner or heavier meal plans
+following the amount of physical exercise they wish to
+undertake (e.g., patients who do not exercise, versus
+patients who regularly exercise), taking into account dif-ferent age, gender, and food preference groups (e.g., veg-
+etarian or vegan), and multiple health nutrition
+measurements including body mass index and body fatpercentage. Integrating image analysis-based preference
+learning (Yang et al. 2017 , Salameh et al. 2014 ) in order to
+monitor foods consumed by the patient would help perform
+personalized and interactive meal planning. On the long
+run, we plan to develop a dedicated exercise planningmechanism that incorporates and schedules multiple exer-
+cise types (e.g., jogging, swimming) based on the patient’s
+time availability and exercise preferences. Using alterna-tive computation techniques such as non-parametric and
+lazy machine learners (e.g., fuzzy k-nearest neighbors, or
+fuzzy support vector machines) (Abboud and Tekli2018 ,2019 , Fahmi et al .2019 ) could be most useful in this
+context, in order to compensate for the lack of formal rules
+and lack of sizeable training data coining physical exerciseﬁtness with meal plan recommendation.
+7 Declarations
+An early version of MPG ’s prototype is described in
+(Salloum et al. 2018 ). The latter is a short 4-page technical
+paper which brieﬂy describes the initial version of the
+prototype, consisting of: (i) a short one-paragraphdescription of the state of the art (the current paper pro-
+vides a comprehensive review of exiting solutions), (ii) a
+short one page description of the initial theoretical proposal(the current paper provides an in-depth description of the
+new proposal), and (iii) a very limited and preliminary
+experimental evaluation, consisting of one experimentdescribed in one paragraph (the present paper performs an
+in-depth experimental evaluation of the new proposal—
+Sect. 5, considering three major experiments involving atotal of 9 human testers: 4 nutrition experts and 5 non-
+experts). In addition, the initial proposal in (Salloum et al.
+2018 ) considers: (iv) basic food items only (the current
+paper introduces a new model integrating both basic and
+composite foods, cf. Sect. 4.4), (v) the traditional trans-
+portation problem only (the present paper introduces a newmulti-factor adaptation of the transportation problem,
+speciﬁcally designed to handle composite foods, cf.
+Sect. 4), (iv) pre-deﬁned static food-meal cost valuesdeﬁned by experts (the present paper introduces a dynamic
+approach consisting of a battery of novel mathematical cost
+functions—cf. Sect. 4.4.3—and meal plan evaluationfunctions—cf. Sect. 4.5).Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2583
+123Acknowledgements We would like to thank all nutritionists who
+volunteered to participate in this study, namely: Dr. Maya Bassil
+(Associate Professor of Human Nutrition in the Department of Nat-
+ural Sciences at LAU), and Ms. Eva-Maria Kahwaji (M.Sc. in Sportsand Exercise Nutrition at Loughborough University), for their help inpreparing the food compatibility graph, as well as Ms. Haneen
+Boughanem (Licensed Dietitian), Mr. Omar Makki (Research Assis-
+tant in Nutrition and Dietetics Coordinated Program, Natural SciencesDepartment, LAU), Ms. Fatima Kawtharani (M.Sc. in HumanNutrition and UNICEF ﬁeld worker), and Ms. Rym Kalo (Licensed
+dietitian) for participating in the meal plan assessment tests.
+Funding This study is partly funded by the National Council for
+Scientiﬁc Research (CNRS-L) – Lebanon, and the Lebanese Amer-
+ican University (LAU).
+Data availability The datasets generated and analyzed during the
+current study are described in this published thesis report (Salloum G.and Tekli J., 2020). They are also available from the authors on
+reasonable request.
+Code availability A software demo and an executable version of the
+prototype are available at the following link: http://sigappfr.acm.org/
+Projects/PIN/ .
+Declarations
+Conflict of interest Not Applicable.
+Human or animal rights Statement of human rights: Ethical approval:
+For this type of study formal consent is not required. Statement on the
+Welfare of Animals: Ethical approval: This article does not contain
+any studies with animals performed by any of the authors.
+Informed consent Additional informed consent was obtained from all
+individual participants for whom identifying information is includedin this article.
+References
+Abboud R, Tekli J (2018) MUSE prototype for music sentiment
+expression .In: IEEE international conference on cognitive com-
+puting (ICCC’18), part of the IEEE world congress on services
+2018. pp 106–109
+Abboud R, Tekli J (2019) Integration of non-parametric fuzzy
+classiﬁcation with an evolutionary-developmental framework toperform music sentiment-based analysis and composition.
+Springer Soft Comput. https://doi.org/10.1007/s00500-019-
+04503-4
+Ainsworth B, Haskell W, Herrmann S, Meckes BDJN, Tudor-Locke
+C, Greer VJJ, Whitt-Glover M, Leon A (2011) 2011 com-
+pendium of physical activities: a second update of codes andMET values. Med Sci Sports Exerc 43(8):1575–1581
+Ayoub J, Samra A, Hlais A, Bassil M, Obeid O (2015) Effect of
+phosphorus supplementation on weight gain and waist circum-
+ference of overweight/obese adults: a randomized clinical trial.Nutr Diabetes 5(12):e189
+Bassi L (1976) The diet problem revisited. Am Econ 20(2):35–39
+Bianchi L, Dorigo M, Gambardella L, Gutjahr W (2009) A Survey on
+metaheuristics for stochastic combinatorial optimization. NatComput 8(2):239–287
+Cormen TH, Leiserson CE, Rivest RL (2009) Introduction to
+algorithms, 3rd edn. MIT Press and McGraw-Hill, New YorkDeb K, Jain H (2014) An evolutionary many-objective optimization
+algorithm using reference-point-based non-dominated sorting
+approach, Part I: solving problems with box constraints. IEEETrans Evol Comput 18(4):577–601
+El-Ghazi T (2009) Metaheuristics: from design to implementation.
+Wiley, New Jersey, p 624
+Evans D (2017) MyFitnessPal. Br J Sports Med 51(14):1101–1102EatThisMuch Inc. (2020) Eat this much .Available: https://www.
+eatthismuch.com/ Accessed 03 Apr 2020.
+Fahmi A, Abdullah S, Amin F (2019) Trapezoidal cubic fuzzy
+number einstein hybrid weighted averaging operators and itsapplication to decision making. Soft Comput 24(14):5753–5783
+Fister D, Fister RSI (2016) Generating eating plans for athletes using
+the particle swarm optimization .In: IEEE Int. Symp. Comput.
+Intell. Informatics (CINTI’16). pp 193–198
+Fitness Meal Planner (2020) Fitness meal planner .Available: http://
+www.ﬁtnessmealplanner.com/ , Accessed: 03 Ap 2020
+Foytik J (1981) Devising and using a computerized diet: an
+exploratory study. J Consum Aff 15(1):158–169
+Gaa´l B, Vassa ´nyi I, Kozmann G (2005) A novel artiﬁcial intelligence
+methodfor weekly dietary menu planning. Methods Inf Med44:655–664
+Hall KD et al (2011) Quantiﬁcation of the effect of energy imbalance
+on bodyweight. Lancet 378(9793):826–837
+Hira D, Gupta P (2014) Operations research. S. Chand & Company
+Ltd.
+Husain W, Wei L, Cheng ZNS (2011) Application of data mining
+techniques in a personalized diet recommendation system for
+cancer patients. In: 2011 IEEE colloquium on humanities,science and engineering. IEEE, pp 239–244
+MakeMyPlate Inc. (2020) Make my plate. Available: http://www.
+makemyplate.co/ Accessed 01 Apr 2020
+MyNetDiary Inc. (2020). MyNetDiary. Available: ttps:// www.
+mynetdiary.com/ Accessed 01 Apr 2020
+Kaldirim E, Kose Z (2006) Application of a multi-objective genetic
+algorithm to the modiﬁed diet problem .In: Genetic and
+evolutionary computation conf. pp 10–13
+Karnik N, Mendel J (2001) Operations on type-2 fuzzy sets. Fuzzy
+Sets Syst 122:327–348
+Kathleen M, Janice R (2017) Food & the nutrition care process, 14th
+edn. Saunders, p 1152
+Khan AS, Hoffmann A (2003a) An advanced artiﬁcial intelligence
+tool for menu design. Nutr Health J 17(1):43–53
+Khan AS, Hoffmann A (2003b) Building a case-based diet recom-
+mendation system without a knowledge engineer. Elsevier J
+Artif Intell Med 27(2):155–179
+Livestrong Foundation (2020) Myplate. Available: https://www.
+livestrong.com/myplate/ Accessed 1 Apr 2020
+Lancaster L (1992) The history of the application of mathematical
+programming to menu planning. Eur J Oper Res 57(3):339–347
+Lee C, Lan S (2015) Adaptive personalized diet linguisti recommen-
+dation mechanism based on type-2 fuzzy sets and genetic fuzzymarkup language. EEE Trans Fuzzy Syst 23(5):1777–1802
+Lee C, Wang M, Hagras H (2010a) A type-2 fuzzy ontology and its
+application to personal diabetic-diet recommendation. IEEETrans Fuzzy Syst 18(2):374–395
+Lee C, Wang M, Habras H, Chen Z, Lan S, Hsu C, Kuo S, Kuo H,
+Cheng H (2012) A novel genetic fuzzy markup language and itsapplication to healthy diet assessment. Int J Uncertain FuzzinessKnowl-Based Syst 20:247–278
+Lee C, Wang M, Li H, Chen W (2008) Intelligent ontological agent
+for diabetic food recommendation .In: IEEE international
+conference on fuzzy systems. pp 1803–1810
+Lee C, Wang M, Hsu C, Hagras H (2009) A novel type-2 fuzzy
+ontology and its application to diet assessment .In: IEEE/WIC/2584 G. Salloum, J. Tekli
+123ACM international joint conference on web intelligence and
+intelligent agent technology, vol 3, pp 417–420
+Lee CS, Wang MH, Acampora G, Hsu CY, Hagras H (2010). Diet
+assessment based on type-2 fuzzy ontology and fuzzy markup
+language .international journal of intelligent systems.
+pp 1187–1216
+Lenstra H (1983) Integer programming with a ﬁxed number of
+variables. Math Oper Res 8(4):538–548
+Mahan L, Escott-Stump S, Raymond L (2012) Krause’s food & the
+nutrition care process. Saunders, Philadelphia, p 1248
+Mattar L, Zeeni N, Bassil M (2015) Effect of movie violence on
+mood, stress, appetite perception and food preferences in a
+random population. Eur J Clin Nutr 69(8):972
+McCann-Rugg M, White G, Endres J (1983) Using goal programming
+to improve the calculation of diabetic diets. Comput Oper Res10(4):365–373
+Noor S, Mohd A, Ruhana K, Mahamud K, Arbin N (2018) Self-
+adaptive hybrid genetic algorithm (SHGA). Far East J Math Sci103:171–190
+Petot GJ, Marling C, Sterling L (1998) An artiﬁcial intelligence
+system for computer-assisted menu planning. J Am Diet Assoc98(9):1009–1014
+Rolls B (2009) The relationship between dietary energy density and
+energy intake. Physiol Behav 97(5):609–615
+Salameh K, Tekli J, Chbeir R (2014) SVG-to-RDF Image Semanti-
+zation. In: International conference on similarity search andapplications (SISAP’14). pp 214–228
+Salloum G, Tekli J (2020) Automated knowledge-based nutrition
+health assessment, recommendation, progress evaluation, andmeal planning .Master’s Thesis Report, LAU Lib., https://laur.
+lau.edu.lb:8443/xmlui/bitstream/handle/10725/10468/George_
+Kamil_Salloum_Thesis_Redacted.pdf
+Salloum G, Tekli J (2021) Automated and personalized nutrition
+health assessment, recommendation, and progress evaluation
+using fuzzy reasoning. Elsevier Int J Human-Comput Studs
+(IJHCS) 151:102610Salloum G, Semaan E, Tekli J (2018) PIN prototype for intelligent
+nutrition assessment and meal planning. In: IEEE internaitonal
+conference on cognitive computing (ICCC’18) - Part of the IEEEcongress on services. pp 110–113
+Schniederjans M (1995) Goal programming: methodology and
+applications, 1st edn. Springer, New York
+Seljak B (2009) Computer-based dietary menu planning. J Food
+Compos Anal 22(5):414–420
+Silberberg E (1985) Nutrition and the demand for tastes. J Polit Econ
+93(5):881–900
+SparkPeople Inc. (2020). SparkPeople .Available https://www.spark
+people.com/resource/mix-and-match-meal-planner.asp Accessed
+01 Apr 2020
+Stigler G (1945) The cost of subsistence. J Farm Econ 27(2):303–314Suksom N, Buranarach M (2010) A knowledge-based framework for
+development of personalized food recommender system .In:
+Proc. of the 5th Int. Conf. on knowledge, information and
+creativity support systems. p 2
+Tu¨rkmenoglu C, Etaner-Uyar AS, Kiraz B (2021) Recommend-
+ing healthy meal plans by optimising nature-inspired many-
+objective diet problem. Health Inf J 2127(1):146045822097671
+Valdez-Pena H, Martinez-Alfaro H (2003) Menu planning using the
+exchange diet system. In: Int. Conf. on Systems, Man and
+Cybernetics, vol 3, pp 3044–3049
+Wang MH (2009) Intelligent ontological multi-agent for healthy diet
+planning. In: IEEE Inter. Conf. on Fuzzy Systems doi: https://doi.
+org/10.1109/FUZZY.2009.5277049
+Winston W, Venkataramanan M (2003) Introduction to mathematical
+programming: operations research volume. Thomson Learning,4th Edn. p. 924
+Yang L, Hsieh CK, Yang H, Dell N, Belongie S, Cole C, Estrin D
+(2017) Yum-Me: a personalized nutrient-based meal recom-mender system. ACM Trans Inf Syst 36(1):7
+Publisher’s Note Springer Nature remains neutral with regard to
+jurisdictional claims in published maps and institutional afﬁliations.Automated and personalized meal plan generation and relevance scoring using a multi-factor … 2585
+123
