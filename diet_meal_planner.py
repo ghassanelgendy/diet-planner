@@ -1,10 +1,10 @@
 import numpy as np
-import random
 import pandas as pd
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Any
 
 # Food database with nutrition info and costs
-# Each food item has: calories, protein, fats, carbs, vitamins, iron, cholesterol, cost per 100g
+
+
 FOOD_DATABASE = {
     "chicken_breast": {
         "calories": 165,
@@ -381,12 +381,15 @@ def calculate_nutrition(individual):
     return total
 
 
-def calculate_fitness(individual, requirements, generation, max_generations):
+def calculate_fitness(
+    individual, requirements, user_profile, generation, max_generations
+):  # Added user_profile
     """
     Calculate the fitness of an individual meal plan.
     Higher fitness is better.
     """
     nutrition = calculate_nutrition(individual)
+    goal = user_profile["goal"].lower()
 
     # Initialize penalty score
     penalty = 0
@@ -396,42 +399,94 @@ def calculate_fitness(individual, requirements, generation, max_generations):
     penalty_weight = 0.5 + 4.5 * (generation / max_generations)
 
     # Penalties for nutrient deficiencies or excesses
-    # We want to be within 10% of the target for each nutrient
     for nutrient, target in requirements.items():
-        if nutrient != "cost":  # Skip cost as it's our objective to minimize
-            actual = nutrition.get(nutrient, 0)
+        if nutrient == "cost":  # Skip cost as it's our objective to minimize
+            continue
 
-            # Different penalties for deficiencies vs. excesses
-            if nutrient in ["calories", "protein", "vitamins", "iron"]:
-                # Being below target is worse than being above for these
-                if actual < target * 0.9:  # More than 10% below
-                    deficit_ratio = (target * 0.9 - actual) / (target * 0.9)
-                    penalty += penalty_weight * 20 * deficit_ratio**2
-                elif actual > target * 1.2:  # More than 20% above
-                    excess_ratio = (actual - target * 1.2) / target
-                    penalty += penalty_weight * 5 * excess_ratio**2
-            elif nutrient in ["fats", "cholesterol"]:
-                # Being above target is worse for these
-                if actual > target * 1.1:  # More than 10% above
-                    excess_ratio = (actual - target * 1.1) / target
-                    penalty += penalty_weight * 10 * excess_ratio**2
-                elif actual < target * 0.7:  # More than 30% below
-                    deficit_ratio = (target * 0.7 - actual) / (target * 0.7)
-                    penalty += penalty_weight * 5 * deficit_ratio**2
-            else:  # carbs and others
-                # Equal penalty for being too high or too low
-                if actual < target * 0.9 or actual > target * 1.1:
-                    deviation = abs(actual - target) / target
-                    penalty += penalty_weight * 10 * deviation**2
+        actual = nutrition.get(nutrient, 0)
+        deviation_ratio = 0
+
+        # --- Calorie Penalty (Goal-Specific) ---
+        if nutrient == "calories":
+            if goal == "lose":
+                if actual > target * 1.05:  # More than 5% over for weight loss is bad
+                    deviation_ratio = (actual - target * 1.05) / target
+                    penalty += (
+                        penalty_weight * 25 * deviation_ratio**2
+                    )  # Higher penalty for excess
+                elif actual < target * 0.9:  # More than 10% below
+                    deviation_ratio = (target * 0.9 - actual) / (target * 0.9)
+                    penalty += penalty_weight * 15 * deviation_ratio**2
+            elif goal == "gain":
+                if actual < target * 0.95:  # More than 5% below for weight gain is bad
+                    deviation_ratio = (target * 0.95 - actual) / (target * 0.95)
+                    penalty += (
+                        penalty_weight * 25 * deviation_ratio**2
+                    )  # Higher penalty for deficit
+                elif actual > target * 1.2:  # More than 20% over
+                    deviation_ratio = (actual - target * 1.2) / target
+                    penalty += penalty_weight * 10 * deviation_ratio**2
+            else:  # maintain
+                if actual < target * 0.9 or actual > target * 1.1:  # 10% deviation
+                    deviation_ratio = abs(actual - target) / target
+                    penalty += penalty_weight * 20 * deviation_ratio**2
+
+        # --- Protein Penalty ---
+        elif nutrient == "protein":
+            # Generally important to meet protein goals, especially for gain/lose
+            if actual < target * 0.9:  # More than 10% below
+                deviation_ratio = (target * 0.9 - actual) / (target * 0.9)
+                penalty += penalty_weight * 20 * deviation_ratio**2
+            elif (
+                actual > target * 1.3
+            ):  # More than 30% above (can be wasteful or strain kidneys in extreme)
+                deviation_ratio = (actual - target * 1.3) / target
+                penalty += penalty_weight * 5 * deviation_ratio**2
+
+        # --- Fats and Cholesterol Penalty ---
+        elif nutrient in ["fats", "cholesterol"]:
+            # Being above target is generally worse for these
+            if actual > target * 1.15:  # More than 15% above
+                deviation_ratio = (actual - target * 1.15) / target
+                penalty += penalty_weight * 15 * deviation_ratio**2
+            elif (
+                actual < target * 0.7 and nutrient == "fats"
+            ):  # Fats are essential, don't go too low
+                deviation_ratio = (target * 0.7 - actual) / (target * 0.7)
+                penalty += penalty_weight * 10 * deviation_ratio**2
+
+        # --- Vitamins Penalty (more lenient due to arbitrary units) ---
+        elif nutrient == "vitamins":
+            if actual < target * 0.7:  # Wider acceptable range (30% below)
+                deviation_ratio = (target * 0.7 - actual) / (target * 0.7)
+                penalty += (
+                    penalty_weight * 5 * deviation_ratio**2
+                )  # Lower penalty multiplier
+            elif actual > target * 1.5:  # Wider acceptable range (50% above)
+                deviation_ratio = (actual - target * 1.5) / target
+                penalty += (
+                    penalty_weight * 2 * deviation_ratio**2
+                )  # Lower penalty multiplier
+
+        # --- Other Nutrients (Carbs, Iron) ---
+        else:
+            # Default: Equal penalty for being too high or too low within a 10-15% range
+            if actual < target * 0.85 or actual > target * 1.15:  # 15% deviation
+                deviation_ratio = abs(actual - target) / target
+                penalty += penalty_weight * 10 * deviation_ratio**2
 
     # Penalty for having too many foods with tiny portions (adds complexity)
+    # Consider making 20g a parameter or scaling penalty more
     small_portion_count = sum(1 for p in individual if 0 < p < 20)
-    penalty += small_portion_count * 0.5
+    penalty += (
+        small_portion_count * 0.75
+    )  # Slightly increased penalty for tiny portions
 
-    # Check for allergies (would be implemented if allergies were provided)
-    # for i, portion in enumerate(individual):
-    #     if FOOD_ITEMS[i] in user_profile['allergies'] and portion > 0:
-    #         penalty += 1000  # Large penalty for allergens
+    # Allergy penalty (if implemented)
+    # if 'allergies' in user_profile and user_profile['allergies']:
+    #     for i, portion in enumerate(individual):
+    #         if FOOD_ITEMS[i] in user_profile['allergies'] and portion > 0:
+    #             penalty += 1000  # Large penalty for allergens
 
     # The main objective: minimize cost
     cost = nutrition["cost"]
@@ -598,8 +653,8 @@ def genetic_algorithm(user_profile, pop_size=1500, generations=200, elite_size=1
         fitnesses = []
         nutritions = []
         for individual in population:
-            fitness, nutrition = calculate_fitness(
-                individual, requirements, generation, generations
+            fitness, nutrition = calculate_fitness(  # Pass user_profile here
+                individual, requirements, user_profile, generation, generations
             )
             fitnesses.append(fitness)
             nutritions.append(nutrition)
