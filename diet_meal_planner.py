@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 # Food database with nutrition info and costs
 
+DAYS_IN_WEEK = 7
 
 FOOD_DATABASE = {
     "rice_white": {
@@ -662,21 +663,24 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
 
 def initialize_population(pop_size, num_foods, min_portion=0, max_portion=300):
     """
-    Initialize a population of meal plans.
-    Each individual is represented as a list of food portions in grams.
+    Initialize a population of weekly meal plans.
+    Each individual is represented as a list of 7 daily plans,
+    where each daily plan is a list of food portions in grams.
+    Shape: (pop_size, DAYS_IN_WEEK, num_foods)
     """
     population = []
     for _ in range(pop_size):
-        # Create an individual with random portions (0-300g) for each food
-        individual = np.random.uniform(min_portion, max_portion, num_foods)
-        population.append(individual)
-        print("Individual:", individual)
-        print("Individual sum:", np.sum(individual))
+        weekly_plan = []
+        for _ in range(DAYS_IN_WEEK):
+            daily_plan = np.random.uniform(min_portion, max_portion, num_foods)
+            weekly_plan.append(daily_plan)
+        population.append(np.array(weekly_plan))
+        # print("Weekly Individual:", np.array(weekly_plan).shape)
     return np.array(population)
 
 
-def calculate_nutrition(individual):
-    """Calculate total nutrition and cost for a meal plan."""
+def _calculate_nutrition_for_one_day(daily_plan_portions):
+    """Calculate total nutrition and cost for a single day's meal plan."""
     total = {
         "calories": 0,
         "protein": 0,
@@ -688,7 +692,7 @@ def calculate_nutrition(individual):
         "cost": 0,
     }
 
-    for i, portion in enumerate(individual):
+    for i, portion in enumerate(daily_plan_portions):
         if portion > 0:  # Only count foods with non-zero portions
             food = FOOD_ITEMS[i]
             food_data = FOOD_DATABASE[food]
@@ -701,136 +705,156 @@ def calculate_nutrition(individual):
     return total
 
 
+def calculate_weekly_nutrition_and_cost(weekly_chromosome):
+    """Calculate total nutrition and cost for a 7-day weekly meal plan."""
+    weekly_totals = {
+        "calories": 0,
+        "protein": 0,
+        "fats": 0,
+        "carbs": 0,
+        "vitamins": 0,
+        "iron": 0,
+        "cholesterol": 0,
+        "cost": 0,
+    }
+    all_daily_nutritions = []
+
+    for day_index in range(DAYS_IN_WEEK):
+        daily_plan_portions = weekly_chromosome[day_index]
+        daily_nutrition = _calculate_nutrition_for_one_day(daily_plan_portions)
+        all_daily_nutritions.append(daily_nutrition)
+        for nutrient in weekly_totals.keys():
+            weekly_totals[nutrient] += daily_nutrition[nutrient]
+
+    return (
+        weekly_totals,
+        all_daily_nutritions,
+    )  # Return all daily for potential detailed penalties
+
+
 def calculate_fitness(
-    individual, requirements, user_profile, generation, max_generations
+    weekly_chromosome, requirements, user_profile, generation, max_generations
 ):  # Added user_profile
     """
-    Calculate the fitness of an individual meal plan.
+    Calculate the fitness of a weekly meal plan.
     Higher fitness is better.
     """
-    nutrition = calculate_nutrition(individual)
+    weekly_nutrition_totals, daily_nutritions_list = (
+        calculate_weekly_nutrition_and_cost(weekly_chromosome)
+    )
     goal = user_profile["goal"].lower()
+    monthly_budget = user_profile.get(
+        "monthly_budget", float("inf")
+    )  # Get monthly budget
 
     # Initialize penalty score
     penalty = 0
 
     # Dynamic penalty weight that increases over generations
-    # Start with lenient penalties and gradually increase strictness
     penalty_weight = 0.5 + 4.5 * (generation / max_generations)
 
-    # Penalties for nutrient deficiencies or excesses
+    # --- Calculate Average Daily Nutrition for comparison with daily requirements ---
+    avg_daily_nutrition = {}
+    for nutrient in weekly_nutrition_totals.keys():
+        if nutrient != "cost":  # Cost is weekly, not averaged daily for nutrient reqs
+            avg_daily_nutrition[nutrient] = (
+                weekly_nutrition_totals[nutrient] / DAYS_IN_WEEK
+            )
+
+    # Penalties for nutrient deficiencies or excesses (based on AVERAGE DAILY intake)
     for nutrient, target in requirements.items():
-        if nutrient == "cost":  # Skip cost as it's our objective to minimize
+        if nutrient == "cost":  # Cost is handled separately with monthly budget
             continue
 
-        actual = nutrition.get(nutrient, 0)
+        actual_avg = avg_daily_nutrition.get(nutrient, 0)
         deviation_ratio = 0
 
         # --- Calorie Penalty (Goal-Specific) ---
         if nutrient == "calories":
             if goal == "lose":
-                if (
-                    actual > target * 1.02
-                ):  # More than 2% over for weight loss is bad (stricter)
-                    deviation_ratio = (actual - target * 1.02) / target
-                    penalty += (
-                        penalty_weight
-                        * 100
-                        * deviation_ratio**2  # Increased multiplier
-                    )  # Higher penalty for excess
-                elif actual < target * 0.95:  # More than 5% below (stricter)
-                    deviation_ratio = (target * 0.95 - actual) / (target * 0.95)
-                    penalty += (
-                        penalty_weight * 60 * deviation_ratio**2
-                    )  # Increased multiplier
+                if actual_avg > target * 1.02:
+                    deviation_ratio = (actual_avg - target * 1.02) / target
+                    penalty += penalty_weight * 100 * deviation_ratio**2
+                elif actual_avg < target * 0.95:
+                    deviation_ratio = (target * 0.95 - actual_avg) / (target * 0.95)
+                    penalty += penalty_weight * 60 * deviation_ratio**2
             elif goal == "gain":
-                if (
-                    actual < target * 0.98
-                ):  # More than 2% below for weight gain is bad (stricter)
-                    deviation_ratio = (target * 0.98 - actual) / (target * 0.98)
-                    penalty += (
-                        penalty_weight
-                        * 100
-                        * deviation_ratio**2  # Increased multiplier
-                    )  # Higher penalty for deficit
-                elif actual > target * 1.1:  # More than 10% over (stricter)
-                    deviation_ratio = (actual - target * 1.1) / target
-                    penalty += (
-                        penalty_weight * 40 * deviation_ratio**2
-                    )  # Increased multiplier
+                if actual_avg < target * 0.98:
+                    deviation_ratio = (target * 0.98 - actual_avg) / (target * 0.98)
+                    penalty += penalty_weight * 100 * deviation_ratio**2
+                elif actual_avg > target * 1.1:
+                    deviation_ratio = (actual_avg - target * 1.1) / target
+                    penalty += penalty_weight * 40 * deviation_ratio**2
             else:  # maintain
-                if (
-                    actual < target * 0.95 or actual > target * 1.05
-                ):  # 5% deviation (stricter)
-                    deviation_ratio = abs(actual - target) / target
-                    penalty += (
-                        penalty_weight * 80 * deviation_ratio**2
-                    )  # Increased multiplier
+                if actual_avg < target * 0.95 or actual_avg > target * 1.05:
+                    deviation_ratio = abs(actual_avg - target) / target
+                    penalty += penalty_weight * 80 * deviation_ratio**2
 
         # --- Protein Penalty ---
         elif nutrient == "protein":
-            # Generally important to meet protein goals, especially for gain/lose
-            if actual < target * 0.9:  # More than 10% below
-                deviation_ratio = (target * 0.9 - actual) / (target * 0.9)
+            if actual_avg < target * 0.9:
+                deviation_ratio = (target * 0.9 - actual_avg) / (target * 0.9)
                 penalty += penalty_weight * 20 * deviation_ratio**2
-            elif (
-                actual > target * 1.3
-            ):  # More than 30% above (can be wasteful or strain kidneys in extreme)
-                deviation_ratio = (actual - target * 1.3) / target
+            elif actual_avg > target * 1.3:
+                deviation_ratio = (actual_avg - target * 1.3) / target
                 penalty += penalty_weight * 5 * deviation_ratio**2
 
         # --- Fats and Cholesterol Penalty ---
         elif nutrient in ["fats", "cholesterol"]:
-            # Being above target is generally worse for these
-            if actual > target * 1.15:  # More than 15% above
-                deviation_ratio = (actual - target * 1.15) / target
+            if actual_avg > target * 1.15:
+                deviation_ratio = (actual_avg - target * 1.15) / target
                 penalty += penalty_weight * 15 * deviation_ratio**2
-            elif (
-                actual < target * 0.7 and nutrient == "fats"
-            ):  # Fats are essential, don't go too low
-                deviation_ratio = (target * 0.7 - actual) / (target * 0.7)
+            elif actual_avg < target * 0.7 and nutrient == "fats":
+                deviation_ratio = (target * 0.7 - actual_avg) / (target * 0.7)
                 penalty += penalty_weight * 10 * deviation_ratio**2
 
-        # --- Vitamins Penalty (more lenient due to arbitrary units) ---
+        # --- Vitamins Penalty ---
         elif nutrient == "vitamins":
-            if actual < target * 0.7:  # Wider acceptable range (30% below)
-                deviation_ratio = (target * 0.7 - actual) / (target * 0.7)
-                penalty += (
-                    penalty_weight * 5 * deviation_ratio**2
-                )  # Lower penalty multiplier
-            elif actual > target * 1.5:  # Wider acceptable range (50% above)
-                deviation_ratio = (actual - target * 1.5) / target
-                penalty += (
-                    penalty_weight * 2 * deviation_ratio**2
-                )  # Lower penalty multiplier
-
+            if actual_avg < target * 0.7:
+                deviation_ratio = (target * 0.7 - actual_avg) / (target * 0.7)
+                penalty += penalty_weight * 5 * deviation_ratio**2
+            elif actual_avg > target * 1.5:
+                deviation_ratio = (actual_avg - target * 1.5) / target
+                penalty += penalty_weight * 2 * deviation_ratio**2
         # --- Other Nutrients (Carbs, Iron) ---
         else:
-            # Default: Equal penalty for being too high or too low within a 10-15% range
-            if actual < target * 0.85 or actual > target * 1.15:  # 15% deviation
-                deviation_ratio = abs(actual - target) / target
+            if actual_avg < target * 0.85 or actual_avg > target * 1.15:
+                deviation_ratio = abs(actual_avg - target) / target
                 penalty += penalty_weight * 10 * deviation_ratio**2
 
-    # Penalty for having too many foods with tiny portions (adds complexity)
-    # Consider making 20g a parameter or scaling penalty more
-    small_portion_count = sum(1 for p in individual if 0 < p < 20)
-    penalty += (
-        small_portion_count * 0.75
-    )  # Slightly increased penalty for tiny portions
+    # --- Monthly Budget Penalty ---
+    weekly_cost = weekly_nutrition_totals["cost"]
+    estimated_monthly_cost = weekly_cost * (30.0 / DAYS_IN_WEEK)  # More precise than *4
+    if estimated_monthly_cost > monthly_budget:
+        budget_deviation_ratio = (
+            estimated_monthly_cost - monthly_budget
+        ) / monthly_budget
+        penalty += (
+            200 * budget_deviation_ratio**2
+        )  # Significant penalty for exceeding budget
 
-    # Allergy penalty (if implemented)
+    # --- Small Portions Penalty (applied per day, then summed for the week) ---
+    total_small_portion_penalty = 0
+    for (
+        daily_plan_portions
+    ) in weekly_chromosome:  # weekly_chromosome is already the list of daily plans
+        small_portion_count_daily = sum(1 for p in daily_plan_portions if 0 < p < 20)
+        total_small_portion_penalty += small_portion_count_daily * 0.75
+    penalty += total_small_portion_penalty
+
+    # Allergy penalty (if implemented, would need to check each day)
     # if 'allergies' in user_profile and user_profile['allergies']:
-    #     for i, portion in enumerate(individual):
-    #         if FOOD_ITEMS[i] in user_profile['allergies'] and portion > 0:
-    #             penalty += 1000  # Large penalty for allergens
+    #     for daily_plan_portions in weekly_chromosome:
+    #         for i, portion in enumerate(daily_plan_portions):
+    #             if FOOD_ITEMS[i] in user_profile['allergies'] and portion > 0:
+    #                 penalty += 1000 # Large penalty for allergens per occurrence
 
-    # The main objective: minimize cost
-    cost = nutrition["cost"]
+    # The main objective: minimize weekly cost (already part of weekly_nutrition_totals)
+    # Fitness: higher is better, so we negate the cost and penalties
+    # We use weekly_cost as the primary cost component in fitness, budget penalty handles overspending.
+    fitness = -weekly_cost - penalty
 
-    # Final fitness: higher is better, so we negate the cost and penalties
-    fitness = -cost - penalty
-
-    return fitness, nutrition
+    return fitness, weekly_nutrition_totals  # Return weekly totals
 
 
 def tournament_selection(population, fitnesses, tournament_size=250):
@@ -851,74 +875,97 @@ def tournament_selection(population, fitnesses, tournament_size=250):
     return np.array(selected)
 
 
-def simulated_binary_crossover(parent1, parent2, eta=4):
+def simulated_binary_crossover(
+    parent1_weekly, parent2_weekly, eta=4, daily_crossover_prob=0.7
+):
     """
-    Perform simulated binary crossover between two parents.
-
-    Parameters:
-    - parent1, parent2: The two parent solutions
-    - eta: Distribution index (higher values keep children closer to parents)
-
-    Returns:
-    - child1, child2: The two offspring solutions
+    Perform simulated binary crossover between two weekly parent plans.
+    Applies SBX to each corresponding day with a certain probability.
     """
-    # Copy parents to create children
-    child1 = parent1.copy()
-    child2 = parent2.copy()
+    child1_weekly = (
+        parent1_weekly.copy()
+    )  # Use deepcopy if arrays contain mutable objects, but numpy arrays are fine
+    child2_weekly = parent2_weekly.copy()
 
-    # Only perform crossover with some probability
-    if np.random.random() < 0.9:
-        for i in range(len(parent1)):
-            # Skip if parents are identical at this gene
-            if abs(parent1[i] - parent2[i]) < 1e-10:
-                continue
+    for day_idx in range(DAYS_IN_WEEK):
+        if (
+            np.random.random() < daily_crossover_prob
+        ):  # Probability to crossover this specific day
+            parent1_daily = parent1_weekly[day_idx]
+            parent2_daily = parent2_weekly[day_idx]
 
-            # Ensure parent1 has the smaller value
-            if parent1[i] > parent2[i]:
-                parent1[i], parent2[i] = parent2[i], parent1[i]
+            # Re-using the core logic of SBX for a single day (1D array)
+            # This part is a direct adaptation of your existing SBX for a 1D array
+            child1_daily_temp = parent1_daily.copy()
+            child2_daily_temp = parent2_daily.copy()
 
-            # Calculate beta (the crossover parameter)
-            rand = np.random.random()
-            beta = 1.0 + 2.0 * (parent1[i] - 0) / (parent2[i] - parent1[i])
-            alpha = 2.0 - beta ** (-eta - 1)
+            if (
+                np.random.random() < 0.9
+            ):  # Original SBX crossover probability for the selected day
+                for i in range(len(parent1_daily)):
+                    if abs(parent1_daily[i] - parent2_daily[i]) < 1e-10:
+                        continue
 
-            if rand <= 1.0 / alpha:
-                beta_q = (rand * alpha) ** (1.0 / (eta + 1))
-            else:
-                beta_q = (1.0 / (2.0 - rand * alpha)) ** (1.0 / (eta + 1))
+                    p1_val = parent1_daily[i]
+                    p2_val = parent2_daily[i]
+                    if p1_val > p2_val:  # Ensure p1_val is smaller
+                        p1_val, p2_val = p2_val, p1_val
 
-            # Create children using beta_q
-            child1[i] = 0.5 * ((1 + beta_q) * parent1[i] + (1 - beta_q) * parent2[i])
-            child2[i] = 0.5 * ((1 - beta_q) * parent1[i] + (1 + beta_q) * parent2[i])
+                    rand = np.random.random()
+                    # Check for division by zero if p2_val and p1_val are too close or equal
+                    if (
+                        abs(p2_val - p1_val) < 1e-9
+                    ):  # Avoid division by zero or extremely small numbers
+                        beta = 1.0  # Or some other default behavior
+                    else:
+                        beta = 1.0 + 2.0 * (p1_val - 0) / (p2_val - p1_val)
 
-            # Ensure children are within bounds
-            child1[i] = max(0, min(300, child1[i]))
-            child2[i] = max(0, min(300, child2[i]))
+                    alpha = 2.0 - beta ** (-eta - 1)
 
-    return child1, child2
+                    if rand <= 1.0 / alpha:
+                        beta_q = (rand * alpha) ** (1.0 / (eta + 1))
+                    else:
+                        beta_q = (1.0 / (2.0 - rand * alpha)) ** (1.0 / (eta + 1))
+
+                    child1_daily_temp[i] = 0.5 * (
+                        (1 + beta_q) * p1_val + (1 - beta_q) * p2_val
+                    )
+                    child2_daily_temp[i] = 0.5 * (
+                        (1 - beta_q) * p1_val + (1 + beta_q) * p2_val
+                    )
+
+                    child1_daily_temp[i] = max(0, min(300, child1_daily_temp[i]))
+                    child2_daily_temp[i] = max(0, min(300, child2_daily_temp[i]))
+
+            child1_weekly[day_idx] = child1_daily_temp
+            child2_weekly[day_idx] = child2_daily_temp
+
+    return child1_weekly, child2_weekly
 
 
-def gaussian_mutation(individual, mutation_rate=0.6, mutation_scale=25.0):
+def gaussian_mutation(
+    weekly_chromosome,
+    daily_mutation_prob=0.5,
+    gene_mutation_rate=0.1,
+    mutation_scale=25.0,
+):
     """
-    Apply Gaussian mutation to an individual.
-
-    Parameters:
-    - individual: The solution to mutate
-    - mutation_rate: Probability of mutating each gene
-    - mutation_scale: Standard deviation of the Gaussian noise
+    Apply Gaussian mutation to a weekly chromosome.
+    Each day has a probability of being selected for mutation.
+    If a day is selected, each gene (food portion) in that day has a probability of being mutated.
     """
-    mutated = individual.copy()
-
-    for i in range(len(mutated)):
-        # Apply mutation with probability mutation_rate
-        if np.random.random() < mutation_rate:
-            # Add Gaussian noise
-            mutated[i] += np.random.normal(0, mutation_scale)
-
-            # Ensure the value stays within bounds
-            mutated[i] = max(0, min(300, mutated[i]))
-
-    return mutated
+    mutated_weekly_chromosome = weekly_chromosome.copy()
+    for day_idx in range(DAYS_IN_WEEK):
+        if np.random.random() < daily_mutation_prob:  # Probability to mutate this day
+            daily_plan = mutated_weekly_chromosome[day_idx].copy()
+            for i in range(len(daily_plan)):
+                if (
+                    np.random.random() < gene_mutation_rate
+                ):  # Probability to mutate this specific food portion
+                    daily_plan[i] += np.random.normal(0, mutation_scale)
+                    daily_plan[i] = max(0, min(300, daily_plan[i]))
+            mutated_weekly_chromosome[day_idx] = daily_plan
+    return mutated_weekly_chromosome
 
 
 def crossover_population(selected, crossover_rate=0.8):
@@ -946,10 +993,13 @@ def crossover_population(selected, crossover_rate=0.8):
 
 
 def mutate_population(offspring, mutation_rate=0.2):
-    """Apply mutation to the offspring population."""
+    """Apply mutation to the offspring population (weekly plans)."""
     mutated = []
-    for individual in offspring:
-        mutated_individual = gaussian_mutation(individual, mutation_rate)
+    for individual_weekly_plan in offspring:
+        # The mutation_rate here could be interpreted as daily_mutation_prob for the new gaussian_mutation
+        mutated_individual = gaussian_mutation(
+            individual_weekly_plan, daily_mutation_prob=mutation_rate
+        )
         mutated.append(mutated_individual)
     return np.array(mutated)
 
@@ -970,7 +1020,7 @@ def elitism(population, new_population, fitnesses, elite_size=2):
 
 def genetic_algorithm(user_profile, pop_size=1500, generations=200, elite_size=10):
     """
-    Main genetic algorithm loop for diet planning.
+    Main genetic algorithm loop for weekly diet planning.
     """
     # Calculate nutritional requirements
     requirements = calculate_daily_needs(user_profile)
@@ -999,8 +1049,8 @@ def genetic_algorithm(user_profile, pop_size=1500, generations=200, elite_size=1
         max_fitness_idx = np.argmax(fitnesses)
         if fitnesses[max_fitness_idx] > best_fitness:
             best_fitness = fitnesses[max_fitness_idx]
-            best_individual = population[max_fitness_idx].copy()
-            best_nutrition = nutritions[max_fitness_idx]
+            best_individual = population[max_fitness_idx].copy()  # Now a weekly plan
+            best_nutrition = nutritions[max_fitness_idx]  # Now weekly nutrition totals
 
             print(
                 f"Generation {generation}: Found better solution with fitness {best_fitness:.2f}"
@@ -1013,44 +1063,71 @@ def genetic_algorithm(user_profile, pop_size=1500, generations=200, elite_size=1
         offspring = crossover_population(selected)
 
         # Mutation
-        offspring = mutate_population(offspring)
+        # Reduce mutation rate over time for fine-tuning
+        # This mutation_rate is now the daily_mutation_prob for the gaussian_mutation function
+        current_daily_mutation_prob = 0.2 * (1 - generation / generations)
+        # offspring = mutate_population(offspring, mutation_rate=current_daily_mutation_prob) # Pass it correctly
+        # Corrected call to mutate_population, which internally uses this as daily_mutation_prob
+        offspring = mutate_population(
+            offspring, mutation_rate=current_daily_mutation_prob
+        )
 
         # Elitism
         population = elitism(population, offspring, fitnesses, elite_size)
 
-        # Reduce mutation rate over time for fine-tuning
-        mutation_rate = 0.2 * (1 - generation / generations)
-
     # Return best meal plan found
-    return best_individual, best_nutrition
+    return best_individual, best_nutrition  # best_individual is now a weekly plan
 
 
-def format_meal_plan(individual, nutrition):
-    """Format the meal plan for display."""
+def format_meal_plan(weekly_chromosome, weekly_nutrition_totals, user_profile):
+    """Format the weekly meal plan for display."""
     result = []
-    result.append("\n===== OPTIMAL DIET PLAN =====")
+    result.append("\n===== OPTIMAL WEEKLY DIET PLAN =====")
 
-    total_calories = nutrition["calories"]
-    total_cost = nutrition["cost"]
+    weekly_cost = weekly_nutrition_totals["cost"]
+    monthly_budget = user_profile.get("monthly_budget", "Not set")
+    estimated_monthly_cost = weekly_cost * (30.0 / DAYS_IN_WEEK)
 
-    result.append(f"\nTotal Daily Calories: {total_calories:.1f} kcal")
-    result.append(f"Total Daily Cost: EGP{total_cost:.2f}")
+    result.append(f"\nTotal Weekly Cost: EGP{weekly_cost:.2f}")
+    result.append(
+        f"Estimated Monthly Cost: EGP{estimated_monthly_cost:.2f} (Budget: EGP{monthly_budget})"
+    )
+    if (
+        isinstance(monthly_budget, (int, float))
+        and estimated_monthly_cost > monthly_budget
+    ):
+        result.append(
+            f"  WARNING: Estimated monthly cost exceeds budget by EGP{estimated_monthly_cost - monthly_budget:.2f}"
+        )
 
-    result.append("\nNutritional Profile:")
-    result.append(f"  - Protein: {nutrition['protein']:.1f}g")
-    result.append(f"  - Fats: {nutrition['fats']:.1f}g")
-    result.append(f"  - Carbs: {nutrition['carbs']:.1f}g")
-    result.append(f"  - Iron: {nutrition['iron']:.1f}mg")
-    result.append(f"  - Cholesterol: {nutrition['cholesterol']:.1f}mg")
-
-    result.append("\nRecommended Daily Foods:")
-    for i, portion in enumerate(individual):
-        if portion > 10:  # Only show foods with significant portions
-            food = FOOD_ITEMS[i]
-            food_cost = FOOD_DATABASE[food]["cost"] * portion / 100.0
+    result.append("\nAverage Daily Nutritional Profile (from week):")
+    for nutrient, total_value in weekly_nutrition_totals.items():
+        if nutrient != "cost":
+            avg_daily_value = total_value / DAYS_IN_WEEK
             result.append(
-                f"  - {food.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_cost:.2f})"
+                f"  - Avg. Daily {nutrient.capitalize()}: {avg_daily_value:.1f}"
             )
+
+    for day_idx in range(DAYS_IN_WEEK):
+        result.append(f"\n--- Day {day_idx + 1} ---")
+        daily_plan_portions = weekly_chromosome[day_idx]
+        daily_nutrition = _calculate_nutrition_for_one_day(daily_plan_portions)
+        result.append(
+            f"  Daily Calories: {daily_nutrition['calories']:.1f} kcal, Daily Cost: EGP{daily_nutrition['cost']:.2f}"
+        )
+
+        foods_for_day = []
+        for i, portion in enumerate(daily_plan_portions):
+            if portion > 10:  # Only show foods with significant portions
+                food_name = FOOD_ITEMS[i]
+                food_item_cost = FOOD_DATABASE[food_name]["cost"] * portion / 100.0
+                foods_for_day.append(
+                    f"    - {food_name.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_item_cost:.2f})"
+                )
+        if foods_for_day:
+            result.extend(foods_for_day)
+        else:
+            result.append("    No significant food portions for this day.")
 
     return "\n".join(result)
 
@@ -1063,19 +1140,25 @@ def main():
         "weight": 75,  # kg
         "height": 183,  # cm
         "activity_level": "Moderate",
-        "goal": "a88",
+        "goal": "maintain",  # Changed goal for testing
         "allergies": [],
+        "monthly_budget": 2500,  # Example monthly budget in EGP
     }
 
-    print("Running genetic algorithm to find optimal diet plan...")
+    print("Running genetic algorithm to find optimal weekly diet plan...")
     print("This may take a few minutes...")
 
     # Run the genetic algorithm
-    best_individual, best_nutrition = genetic_algorithm(user_profile)
+    best_weekly_individual, best_weekly_nutrition = genetic_algorithm(user_profile)
 
     # Display the result
-    result = format_meal_plan(best_individual, best_nutrition)
-    print(result)
+    if best_weekly_individual is not None:
+        result = format_meal_plan(
+            best_weekly_individual, best_weekly_nutrition, user_profile
+        )
+        print(result)
+    else:
+        print("No suitable meal plan found.")
 
 
 if __name__ == "__main__":
