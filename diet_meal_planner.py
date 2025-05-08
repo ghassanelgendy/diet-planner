@@ -387,82 +387,53 @@ def genetic_algorithm(user_profile, pop_size=1500, generations=20, elite_size=10
     Main genetic algorithm loop for DAILY diet planning.
     """
     requirements = calculate_daily_needs(user_profile)
-    num_foods = len(FOOD_ITEMS)  # FOOD_ITEMS must be globally defined
-
-    # Initialize population of 1D daily plans
+    num_foods = len(FOOD_ITEMS)
     population = initialize_population(pop_size, num_foods)
-
     best_fitness = float("-inf")
-    best_individual = None  # Will be a 1D daily plan
-    best_nutrition_info = None  # Will be a dict of daily nutrition
-
+    best_individual = None
+    best_nutrition_info = None
     for generation in range(generations):
         fitnesses = []
-        nutrition_infos = []  # Store full nutrition info for the best individual
-
-        for individual in population:  # individual is a 1D daily plan
-            fitness, nutrition_info = calculate_fitness(
-                individual, requirements, user_profile, generation, generations
-            )
+        nutrition_infos = []
+        for individual in population:
+            fitness, nutrition_info = calculate_fitness(individual, requirements, user_profile, generation, generations)
             fitnesses.append(fitness)
             nutrition_infos.append(nutrition_info)
-
         max_fitness_idx = np.argmax(fitnesses)
         if fitnesses[max_fitness_idx] > best_fitness:
             best_fitness = fitnesses[max_fitness_idx]
             best_individual = population[max_fitness_idx].copy()
             best_nutrition_info = nutrition_infos[max_fitness_idx]
-
-            print(
-                f"Generation {generation}: New best fitness {best_fitness:.2f}, Cost: EGP{best_nutrition_info['cost']:.2f}"
-            )
-
-        selected = tournament_selection(
-            population, fitnesses
-        )  # Assumes tournament_selection returns 1D plans
-        offspring = crossover_population(
-            selected
-        )  # Assumes crossover_population works with 1D plans
-
-        # Mutation rate can still be dynamic if desired, but PW(Gen) handles penalty scaling
-        current_mutation_prob = 0.2 * (1 - generation / generations)  # Example
-        offspring = mutate_population(
-            offspring, mutation_rate=current_mutation_prob
-        )  # Assumes mutate_population works with 1D plans
-
+        # Print progress for this generation
+        print(f"Generation {generation+1}/{generations}: Best Fitness = {fitnesses[max_fitness_idx]:.2f}, Cost = EGP{nutrition_infos[max_fitness_idx]['cost']:.2f}")
+        selected = tournament_selection(population, fitnesses)
+        offspring = crossover_population(selected)
+        current_mutation_prob = 0.2 * (1 - generation / generations)
+        offspring = mutate_population(offspring, mutation_rate=current_mutation_prob)
         population = elitism(population, offspring, fitnesses, elite_size)
-
-    return best_individual, best_nutrition_info  # Return daily plan and its nutrition
+    return best_individual, best_nutrition_info
 
 
 def format_meal_plan(daily_chromosome, daily_nutrition_info, user_profile):
     """Format the DAILY meal plan for display."""
     result = ["\n===== OPTIMAL DAILY DIET PLAN ====="]
-
     cost = daily_nutrition_info.get("cost", 0)
     result.append(f"Total Daily Cost: EGP{cost:.2f}")
-
     result.append("\nDaily Nutritional Profile:")
     for nutrient, value in daily_nutrition_info.items():
         if nutrient != "cost":
             result.append(f"  - {nutrient.capitalize()}: {value:.1f}")
-
     result.append("\nFoods to Eat:")
     foods_for_day = []
     for i, portion in enumerate(daily_chromosome):
-        if portion > 10:  # Only show foods with significant portions
-            food_name = FOOD_ITEMS[i]  # FOOD_ITEMS must be globally defined
-            food_item_cost = (
-                FOOD_DATABASE[food_name]["cost"] * portion / 100.0
-            )  # FOOD_DATABASE must be globally defined
-            foods_for_day.append(
-                f"    - {food_name.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_item_cost:.2f})"
-            )
+        if portion > 10:
+            food_name = FOOD_ITEMS[i]
+            food_item_cost = FOOD_DATABASE[food_name]["cost"] * portion / 100.0
+            foods_for_day.append(f"    - {food_name.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_item_cost:.2f})")
     if foods_for_day:
         result.extend(foods_for_day)
     else:
         result.append("    No significant food portions for this day.")
-
     return "\n".join(result)
 
 
@@ -501,7 +472,6 @@ def get_user_profile():
         "height": height,
         "activity_level": activity_level,
         "goal": goal,
-        "allergies": [],
     }
 
 
@@ -516,12 +486,10 @@ def main():
                 "height": 183,
                 "activity_level": "Moderate",
                 "goal": "maintain",
-                "allergies": [],
             }
             print("\nUsing default example profile:")
             for k, v in user_profile.items():
-                if k != "allergies":
-                    print(f"  {k}: {v}")
+                print(f"  {k}: {v}")
         elif choice == "2":
             user_profile = get_user_profile()
         elif choice == "0":
