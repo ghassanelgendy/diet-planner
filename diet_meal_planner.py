@@ -437,30 +437,76 @@ def format_meal_plan(daily_chromosome, daily_nutrition_info, user_profile):
     return "\n".join(result)
 
 
-def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=20, elite_size=10, randomize_seed=True):
+def generate_weekly_shopping_list(daily_results):
     """
-    Run the daily genetic algorithm 7 times, tracking foods used and penalizing repeats for variety.
-    user_profiles: list of 7 user_profile dicts (can be the same or different for each day)
-    Returns: list of (daily_chromosome, daily_nutrition_info) for each day, and a weekly nutrition summary.
+    Given daily_results (list of (chromosome, nutrition)), return a dict of food_name -> total_grams, total_cost for the week.
     """
+    food_totals = {food: 0.0 for food in FOOD_ITEMS}
+    food_costs = {food: 0.0 for food in FOOD_ITEMS}
+    for chromosome, _ in daily_results:
+        for i, portion in enumerate(chromosome):
+            if portion > 0:
+                food = FOOD_ITEMS[i]
+                food_totals[food] += portion
+                food_costs[food] += FOOD_DATABASE[food]["cost"] * portion / 100.0
+    shopping_list = []
+    for food in FOOD_ITEMS:
+        if food_totals[food] > 0:
+            shopping_list.append((food, food_totals[food], food_costs[food]))
+    shopping_list.sort(key=lambda x: -x[1])  # Sort by total grams descending
+    return shopping_list
+
+
+def format_shopping_list(shopping_list):
+    result = ["\n===== WEEKLY SHOPPING LIST ====="]
+    total_cost = sum(item[2] for item in shopping_list)
+    for food, grams, cost in shopping_list:
+        result.append(f"- {food.replace('_', ' ').title()}: {grams:.0f}g (EGP{cost:.2f})")
+    result.append(f"\nTotal Shopping Cost: EGP{total_cost:.2f}")
+    return "\n".join(result)
+
+
+def calculate_food_diversity(chromosome):
+    return sum(1 for portion in chromosome if portion > 10)
+
+
+def calculate_fitness_with_diversity(
+    daily_chromosome,
+    requirements,
+    user_profile,
+    generation,
+    max_generations,
+    food_counts,
+    min_diversity,
+    max_diversity
+):
+    fitness, nutrition_info = calculate_fitness(
+        daily_chromosome, requirements, user_profile, generation, max_generations
+    )
+    # Weekly penalty
+    penalty = 0
+    for i, portion in enumerate(daily_chromosome):
+        if portion > 10:
+            penalty += 20 * food_counts[i]
+    # Diversity penalty
+    diversity = calculate_food_diversity(daily_chromosome)
+    if diversity < min_diversity:
+        penalty += 1000 * (min_diversity - diversity)  # Hard penalty for too few foods
+    if diversity > max_diversity:
+        penalty += 1000 * (diversity - max_diversity)  # Hard penalty for too many foods
+    fitness -= penalty
+    return fitness, nutrition_info
+
+
+def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=50, elite_size=10, randomize_seed=True, min_diversity=4, max_diversity=8):
     days = 7
     weekly_food_counts = np.zeros(len(FOOD_ITEMS))
     weekly_nutrition = {k: 0 for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]}
     daily_results = []
-
-    def fitness_with_weekly_penalty(daily_chromosome, requirements, user_profile, generation, max_generations, food_counts):
-        # Use the original fitness function
-        fitness, nutrition_info = calculate_fitness(
-            daily_chromosome, requirements, user_profile, generation, max_generations
+    def fitness_with_weekly_penalty_and_diversity(daily_chromosome, requirements, user_profile, generation, max_generations, food_counts):
+        return calculate_fitness_with_diversity(
+            daily_chromosome, requirements, user_profile, generation, max_generations, food_counts, min_diversity, max_diversity
         )
-        # Add penalty for foods already used a lot this week
-        penalty = 0
-        for i, portion in enumerate(daily_chromosome):
-            if portion > 10:
-                penalty += 20 * food_counts[i]  # 20 points per previous use
-        fitness -= penalty
-        return fitness, nutrition_info
-
     for day in range(days):
         if randomize_seed:
             np.random.seed(None)
@@ -475,7 +521,7 @@ def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=20, elite
             fitnesses = []
             nutrition_infos = []
             for individual in population:
-                fitness, nutrition_info = fitness_with_weekly_penalty(
+                fitness, nutrition_info = fitness_with_weekly_penalty_and_diversity(
                     individual, requirements, user_profile, generation, generations, weekly_food_counts
                 )
                 fitnesses.append(fitness)
@@ -491,15 +537,12 @@ def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=20, elite
             current_mutation_prob = 0.2 * (1 - generation / generations)
             offspring = mutate_population(offspring, mutation_rate=current_mutation_prob)
             population = elitism(population, offspring, fitnesses, elite_size)
-        # Track foods used in significant portions
         for i, portion in enumerate(best_individual):
             if portion > 10:
                 weekly_food_counts[i] += 1
-        # Track weekly nutrition
         for k in weekly_nutrition:
             weekly_nutrition[k] += best_nutrition_info.get(k, 0)
         daily_results.append((best_individual, best_nutrition_info))
-    # Compute weekly nutrition averages
     weekly_averages = {k: v / days for k, v in weekly_nutrition.items()}
     return daily_results, weekly_nutrition, weekly_averages
 
@@ -527,7 +570,16 @@ def get_weekly_user_profiles(base_profile):
         return [base_profile.copy() for _ in range(7)]
 
 
-def format_weekly_plan(daily_results, weekly_nutrition, weekly_averages):
+def get_diversity_settings():
+    print("\nSet daily food diversity constraints:")
+    min_div = input("  Minimum number of different foods per day (default 4): ").strip()
+    max_div = input("  Maximum number of different foods per day (default 8): ").strip()
+    min_diversity = int(min_div) if min_div.isdigit() else 4
+    max_diversity = int(max_div) if max_div.isdigit() else 8
+    return min_diversity, max_diversity
+
+
+def format_weekly_plan(daily_results, weekly_nutrition, weekly_averages, shopping_list):
     result = ["\n===== OPTIMAL WEEKLY DIET PLAN ====="]
     total_cost = weekly_nutrition.get("cost", 0)
     result.append(f"Total Weekly Cost: EGP{total_cost:.2f}")
@@ -538,6 +590,7 @@ def format_weekly_plan(daily_results, weekly_nutrition, weekly_averages):
     for day, (chromosome, nutrition) in enumerate(daily_results, 1):
         result.append(f"\n--- Day {day} ---")
         result.append(format_meal_plan(chromosome, nutrition, {}))
+    result.append(format_shopping_list(shopping_list))
     return "\n".join(result)
 
 
@@ -600,9 +653,13 @@ def main():
         elif choice == "3":
             user_profile = get_user_profile()
             weekly_profiles = get_weekly_user_profiles(user_profile)
+            min_diversity, max_diversity = get_diversity_settings()
             print("\nRunning genetic algorithm to find optimal weekly diet plan...")
-            daily_results, weekly_nutrition, weekly_averages = weekly_genetic_algorithm(weekly_profiles)
-            result_str = format_weekly_plan(daily_results, weekly_nutrition, weekly_averages)
+            daily_results, weekly_nutrition, weekly_averages = weekly_genetic_algorithm(
+                weekly_profiles, min_diversity=min_diversity, max_diversity=max_diversity
+            )
+            shopping_list = generate_weekly_shopping_list(daily_results)
+            result_str = format_weekly_plan(daily_results, weekly_nutrition, weekly_averages, shopping_list)
             print(result_str)
             input("\nPress Enter to return to the main menu...")
             continue
