@@ -13,7 +13,7 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
     activity_level = user_profile["activity_level"].lower()
     goal = user_profile["goal"].lower()
 
-    # Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor equation
+    # Hesbet elBMR (Basal Metabolic Rate)
     bmr = 10 * weight + 6.25 * height - 5 * age + (5 if gender == "male" else -161)
 
     # Activity level multipliers
@@ -48,18 +48,18 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
     fat_calories = calories * fat_ratio
     carb_calories = calories * carb_ratio
 
-    protein_grams = protein_calories / 4  # 4 calories per gram of protein
-    fat_grams = fat_calories / 9  # 9 calories per gram of fat
-    carb_grams = carb_calories / 4  # 4 calories per gram of carbs
+    protein_grams = protein_calories / 4    # 4 calories per gram of protein
+    fat_grams = fat_calories / 9            # 9 calories per gram of fat
+    carb_grams = carb_calories / 4          # 4 calories per gram of carbs
 
-    # Other nutrient needs (simplified estimates)
+    # cholesterol w iron needs
     if gender == "male" or age > 50:
         iron_mg = 8
         cholesterol_max = 300  # mg
     else:
         iron_mg = 18
         cholesterol_max = 300  # mg
-
+    
     return {
         "calories": calories,
         "protein": protein_grams,
@@ -70,181 +70,149 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
     }
 
 
-def initialize_population(pop_size, num_foods, min_portion=0, max_portion=300):
-    """
-    Initialize a population of daily meal plans.
-    Each individual is a 1D array of food portions in grams.
-    Shape: (pop_size, num_foods)
-    """
+def initialize_population(pop_size, num_foods, min_portion=0, max_portion=300): #daily meal plan bs random 
     return np.random.uniform(min_portion, max_portion, (pop_size, num_foods))
 
 
-def calculate_nutrition_and_cost_for_day(daily_chromosome_portions):
-    """Calculate total nutrition and cost for a single day's meal plan (1D chromosome)."""
+def calculate_nutrition_and_cost_for_day(daily_chromosome_portions): #matrix feh cost elmeals w nutration facts
     totals = {k: 0 for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]}
     for i, portion in enumerate(daily_chromosome_portions):
         if portion > 0:
             food = FOOD_ITEMS[i]
             data = FOOD_DATABASE[food]
-            factor = portion / 100.0
+            factor = portion / 100.0 #kool elakl feh nutration facts fel 100gram
             for k in totals:
                 if k in data:
                     totals[k] += data[k] * factor
     return totals
 
 
-# Replace the existing calculate_fitness function
 def calculate_fitness(
-    daily_chromosome,  # Renamed from weekly_chromosome
-    requirements: Dict[str, float],
-    user_profile: Dict[str, Any],
-    generation: int,  # Gen
-    max_generations: int,  # Gen_max
-):
-    """
-    Calculate the fitness of a daily meal plan based on the provided mathematical formulation.
-    Fitness_GA(x, Gen) = -ActualCost(x) - (PW(Gen) * TotalNutrientBasePenalty(x) + P_small_portions_base(x))
-    """
+    meal_plan_chromosome, 
+    nutrient_requirements,
+    user_profile,
+    current_generation, 
+    total_generations):
+
+    # Fitness(x, Gen) = -ActualCost(x) - (PW(Gen) * TotalNutrientBasePenalty(x) + P_small_portions_base(x))
     # 1. Calculate Actual_k(x) and ActualCost(x)
-    # daily_chromosome is 'x' in the formulation
-    actual = calculate_nutrition_and_cost_for_day(daily_chromosome)
-    actual_cost = actual.pop(
-        "cost"
-    )  # Remove cost for nutrient penalty calculation
+    actual_nutrients = calculate_nutrition_and_cost_for_day(meal_plan_chromosome)
+    actual_total_cost = actual_nutrients.pop("cost")
 
-    # 2. Calculate Base Penalty Functions (Unscaled)
-    total_penalty = 0
-    goal = user_profile["goal"].lower()  # GoalUser
+    total_nutrient_penalty = 0
+    user_goal = user_profile["goal"].lower()
 
-    # Define BasePenaltyMult_k_condition and Thresh_k_condition (as per your previous script logic)
-    # These are the multipliers and thresholds for penalties BEFORE PW(Gen) scaling.
-    # Example for calories (you'll need to define these for all nutrients based on your old penalty structure)
-    # This section needs to mirror the penalty logic from your original daily planner's fitness function.
-
-    # --- Calorie Base Penalty P_calories_base(x) ---
-    ac_calories = actual.get("calories", 0)
-    tc_calories = requirements.get(
-        "calories", 1
-    )  # Target_calories, avoid division by zero
-    p_calories_base = 0
-    # These multipliers (100, 60, 80 etc.) are BasePenaltyMult_k_condition
-    if goal == "lose":
-        thresh_over = tc_calories * 1.02  # Thresh_calories_lose_over
-        thresh_under = tc_calories * 0.95  # Thresh_calories_lose_under
-        if ac_calories > thresh_over:
-            dev_over = (ac_calories - thresh_over) / tc_calories
-            p_calories_base += 100 * dev_over**2  # BasePenaltyMult_cal_lose_over
-        elif ac_calories < thresh_under:
-            dev_under = (
-                thresh_under - ac_calories
-            ) / thresh_under  # Denominator as per your previous stricter version
-            p_calories_base += 60 * dev_under**2  # BasePenaltyMult_cal_lose_under
-    elif goal == "gain":
-        thresh_under = tc_calories * 0.98
-        thresh_over = tc_calories * 1.10
-        if ac_calories < thresh_under:
-            dev_under = (thresh_under - ac_calories) / thresh_under
-            p_calories_base += 100 * dev_under**2
-        elif ac_calories > thresh_over:
-            dev_over = (ac_calories - thresh_over) / tc_calories
-            p_calories_base += 40 * dev_over**2
+    # --- Calorie Base Penalty penalty_calories ---
+    actual_calories = actual_nutrients.get("calories", 0)
+    target_calories = nutrient_requirements.get("calories", 1)
+    penalty_calories = 0
+    if user_goal == "lose":
+        thresh_over = target_calories * 1.02
+        thresh_under = target_calories * 0.95
+        if actual_calories > thresh_over:
+            dev_over = (actual_calories - thresh_over) / target_calories
+            penalty_calories += 100 * dev_over**2
+        elif actual_calories < thresh_under:
+            dev_under = (thresh_under - actual_calories) / thresh_under
+            penalty_calories += 60 * dev_under**2
+    elif user_goal == "gain":
+        thresh_under = target_calories * 0.98
+        thresh_over = target_calories * 1.10
+        if actual_calories < thresh_under:
+            dev_under = (thresh_under - actual_calories) / thresh_under
+            penalty_calories += 100 * dev_under**2
+        elif actual_calories > thresh_over:
+            dev_over = (actual_calories - thresh_over) / target_calories
+            penalty_calories += 40 * dev_over**2
     else:  # maintain
-        thresh_lower = tc_calories * 0.95
-        thresh_upper = tc_calories * 1.05
-        if not (thresh_lower <= ac_calories <= thresh_upper):
-            dev = abs(ac_calories - tc_calories) / tc_calories
-            p_calories_base += 80 * dev**2
-    total_penalty += p_calories_base
+        thresh_lower = target_calories * 0.95
+        thresh_upper = target_calories * 1.05
+        if not (thresh_lower <= actual_calories <= thresh_upper):
+            dev = abs(actual_calories - target_calories) / target_calories
+            penalty_calories += 80 * dev**2
+    total_nutrient_penalty += penalty_calories
 
-    # --- Protein Base Penalty P_protein_base(x) ---
-    ac_protein = actual.get("protein", 0)
-    tc_protein = requirements.get("protein", 1)
-    p_protein_base = 0
-    thresh_prot_under = tc_protein * 0.90
-    thresh_prot_over = tc_protein * 1.30
-    if ac_protein < thresh_prot_under:
-        dev_under = (thresh_prot_under - ac_protein) / thresh_prot_under
-        p_protein_base += 20 * dev_under**2
-    elif ac_protein > thresh_prot_over:
-        dev_over = (ac_protein - thresh_prot_over) / tc_protein
-        p_protein_base += 5 * dev_over**2
-    total_penalty += p_protein_base
+    # --- Protein Base Penalty penalty_protein ---
+    actual_protein = actual_nutrients.get("protein", 0)
+    target_protein = nutrient_requirements.get("protein", 1)
+    penalty_protein = 0
+    thresh_prot_under = target_protein * 0.90
+    thresh_prot_over = target_protein * 1.30
+    if actual_protein < thresh_prot_under:
+        dev_under = (thresh_prot_under - actual_protein) / thresh_prot_under
+        penalty_protein += 20 * dev_under**2
+    elif actual_protein > thresh_prot_over:
+        dev_over = (actual_protein - thresh_prot_over) / target_protein
+        penalty_protein += 5 * dev_over**2
+    total_nutrient_penalty += penalty_protein
 
-    # --- Fats Base Penalty P_fats_base(x) ---
-    ac_fats = actual.get("fats", 0)
-    tc_fats = requirements.get("fats", 1)
-    p_fats_base = 0
-    thresh_fats_over = tc_fats * 1.15
-    thresh_fats_under = tc_fats * 0.70  # if fats are essential
-    if ac_fats > thresh_fats_over:
-        dev_over = (ac_fats - thresh_fats_over) / tc_fats
-        p_fats_base += 15 * dev_over**2
-    elif ac_fats < thresh_fats_under:  # Assuming some fats are needed
-        dev_under = (thresh_fats_under - ac_fats) / thresh_fats_under
-        p_fats_base += 10 * dev_under**2
-    total_penalty += p_fats_base
+    # --- Fats Base Penalty penalty_fats ---
+    actual_fats = actual_nutrients.get("fats", 0)
+    target_fats = nutrient_requirements.get("fats", 1)
+    penalty_fats = 0
+    thresh_fats_over = target_fats * 1.15
+    thresh_fats_under = target_fats * 0.70
+    if actual_fats > thresh_fats_over:
+        dev_over = (actual_fats - thresh_fats_over) / target_fats
+        penalty_fats += 15 * dev_over**2
+    elif actual_fats < thresh_fats_under:
+        dev_under = (thresh_fats_under - actual_fats) / thresh_fats_under
+        penalty_fats += 10 * dev_under**2
+    total_nutrient_penalty += penalty_fats
 
-    # --- Cholesterol Base Penalty P_cholesterol_base(x) ---
-    ac_chol = actual.get("cholesterol", 0)
-    tc_chol = requirements.get("cholesterol", 1)  # Max target
-    p_chol_base = 0
-    thresh_chol_over = tc_chol * 1.15  # Max is 1.0 * target, so 1.15 is over
-    if ac_chol > thresh_chol_over:  # Only penalize if over
-        dev_over = (
-            ac_chol - thresh_chol_over
-        ) / tc_chol  # Denominator could be tc_chol or thresh_chol_over
-        p_chol_base += 15 * dev_over**2  # Using same multiplier as fats for "over"
-    total_penalty += p_chol_base
+    # --- Cholesterol Base Penalty penalty_cholesterol ---
+    actual_cholesterol = actual_nutrients.get("cholesterol", 0)
+    target_cholesterol = nutrient_requirements.get("cholesterol", 1)
+    penalty_cholesterol = 0
+    thresh_chol_over = target_cholesterol * 1.15
+    if actual_cholesterol > thresh_chol_over:
+        dev_over = (actual_cholesterol - thresh_chol_over) / target_cholesterol
+        penalty_cholesterol += 15 * dev_over**2
+    total_nutrient_penalty += penalty_cholesterol
 
     # --- Carbs and Iron Base Penalties (example of 'other nutrients') ---
     for nutrient_key in ["carbs", "iron"]:
-        ac_nutrient = actual.get(nutrient_key, 0)
-        tc_nutrient = requirements.get(nutrient_key, 1)
-        p_nutrient_base = 0
-        thresh_lower = tc_nutrient * 0.85
-        thresh_upper = tc_nutrient * 1.15
-        if not (thresh_lower <= ac_nutrient <= thresh_upper):
-            dev = abs(ac_nutrient - tc_nutrient) / tc_nutrient
-            p_nutrient_base += 10 * dev**2  # BasePenaltyMult_other_dev
-        total_penalty += p_nutrient_base
+        actual_nutrient = actual_nutrients.get(nutrient_key, 0)
+        target_nutrient = nutrient_requirements.get(nutrient_key, 1)
+        penalty_other_nutrient = 0
+        thresh_lower = target_nutrient * 0.85
+        thresh_upper = target_nutrient * 1.15
+        if not (thresh_lower <= actual_nutrient <= thresh_upper):
+            dev = abs(actual_nutrient - target_nutrient) / target_nutrient
+            penalty_other_nutrient += 10 * dev**2
+        total_nutrient_penalty += penalty_other_nutrient
 
     # --- Diversity Penalty: All Food Groups ---
     group_counts = {}
-    for i, portion in enumerate(daily_chromosome):
-        if portion > 10:  # Only count significant portions
+    for i, portion in enumerate(meal_plan_chromosome):
+        if portion > 10:
             food = FOOD_ITEMS[i]
             group = FOOD_GROUPS.get(food, None)
             if group:
                 group_counts[group] = group_counts.get(group, 0) + 1
-    diversity_penalty = sum(50 * (count - 1) for count in group_counts.values() if count > 1)
+    food_group_diversity_penalty = sum(50 * (count - 1) for count in group_counts.values() if count > 1)
 
-    # --- Base Small Portions Penalty P_small_portions_base(x) ---
-    # PortionMin_practical = 20g
-    small_portion_count = sum(1 for portion in daily_chromosome if 0 < portion < 20)
-    small_portion_penalty = 0.75 * small_portion_count
+    # --- Base Small Portions Penalty small_portions_penalty ---
+    small_portions_count = sum(1 for portion in meal_plan_chromosome if 0 < portion < 20)
+    small_portions_penalty = 0.75 * small_portions_count
 
-    # 3. Dynamic Penalty Weight PW(Gen)
-    # PW(Gen) = 0.5 + 4.5 * (Gen / Gen_max)
-    # Ensure max_generations is not zero to avoid division by zero error
-    if max_generations == 0:  # Should not happen if GA is set up correctly
-        pw_gen = 0.5
+    # 3. Dynamic Penalty Weight penalty_weight
+    if total_generations == 0:
+        penalty_weight = 0.5
     else:
-        pw_gen = 0.5 + 4.5 * (generation / max_generations)
+        penalty_weight = 0.5 + 4.5 * (current_generation / total_generations)
 
     # 4. Fitness Value Used by GA: Fitness_GA(x, Gen)
-    # Fitness_GA(x, Gen) = -ActualCost(x) - (PW(Gen) * TotalNutrientBasePenalty(x) + P_small_portions_base(x))
-    fitness = -actual_cost - (
-        pw_gen * total_penalty + small_portion_penalty
+    fitness = -actual_total_cost - (
+        penalty_weight * total_nutrient_penalty + small_portions_penalty
     )
-    fitness -= diversity_penalty
+    fitness -= food_group_diversity_penalty
 
     # Return fitness and the original actual (which includes cost now)
-    # For tracking purposes, it's good to have the full nutrition breakdown.
-    # We re-add cost to actual for the return, as it was popped.
-    actual_with_cost = actual.copy()
-    actual_with_cost["cost"] = actual_cost
+    actual_nutrients_with_cost = actual_nutrients.copy()
+    actual_nutrients_with_cost["cost"] = actual_total_cost
 
-    return fitness, actual_with_cost
+    return fitness, actual_nutrients_with_cost
 
 
 def tournament_selection(population, fitnesses, tournament_size=250):
@@ -438,9 +406,6 @@ def format_meal_plan(daily_chromosome, daily_nutrition_info, user_profile):
 
 
 def generate_weekly_shopping_list(daily_results):
-    """
-    Given daily_results (list of (chromosome, nutrition)), return a dict of food_name -> total_grams, total_cost for the week.
-    """
     food_totals = {food: 0.0 for food in FOOD_ITEMS}
     food_costs = {food: 0.0 for food in FOOD_ITEMS}
     for chromosome, _ in daily_results:
@@ -453,7 +418,7 @@ def generate_weekly_shopping_list(daily_results):
     for food in FOOD_ITEMS:
         if food_totals[food] > 0:
             shopping_list.append((food, food_totals[food], food_costs[food]))
-    shopping_list.sort(key=lambda x: -x[1])  # Sort by total grams descending
+    shopping_list.sort(key=lambda x: -x[1])
     return shopping_list
 
 
@@ -470,81 +435,88 @@ def calculate_food_diversity(chromosome):
     return sum(1 for portion in chromosome if portion > 10)
 
 
-def calculate_fitness_with_diversity(
-    daily_chromosome,
-    requirements,
-    user_profile,
-    generation,
-    max_generations,
-    food_counts,
-    min_diversity,
-    max_diversity
-):
-    fitness, nutrition_info = calculate_fitness(
-        daily_chromosome, requirements, user_profile, generation, max_generations
-    )
-    # Weekly penalty
-    penalty = 0
-    for i, portion in enumerate(daily_chromosome):
-        if portion > 10:
-            penalty += 20 * food_counts[i]
-    # Diversity penalty
+def calculate_fuzzy_diversity_fitness(daily_chromosome, target_diversity, base_width=4):
     diversity = calculate_food_diversity(daily_chromosome)
-    if diversity < min_diversity:
-        penalty += 1000 * (min_diversity - diversity)  # Hard penalty for too few foods
-    if diversity > max_diversity:
-        penalty += 1000 * (diversity - max_diversity)  # Hard penalty for too many foods
-    fitness -= penalty
-    return fitness, nutrition_info
+    a = max(0, target_diversity - base_width // 2)
+    b = target_diversity
+    c = target_diversity + base_width // 2
+    membership = triangular_fuzzy_membership(diversity, a, b, c)
+    return membership, {"diversity": diversity, "membership": membership, "triangle": (a, b, c)}
 
 
-def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=50, elite_size=10, randomize_seed=True, min_diversity=4, max_diversity=8):
+def triangular_fuzzy_membership(d, a, b, c):
+    if d <= a or d >= c:
+        return 0.0
+    elif a < d < b:
+        return (d - a) / (b - a)
+    elif d == b:
+        return 1.0
+    elif b < d < c:
+        return (c - d) / (c - b)
+    else:
+        return 0.0
+
+
+def weekly_genetic_algorithm_fuzzy_diversity(user_profiles, target_diversity, base_width=4, pop_size=1500, generations=20, elite_size=10, randomize_seed=True):
     days = 7
-    weekly_food_counts = np.zeros(len(FOOD_ITEMS))
-    weekly_nutrition = {k: 0 for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]}
     daily_results = []
-    def fitness_with_weekly_penalty_and_diversity(daily_chromosome, requirements, user_profile, generation, max_generations, food_counts):
-        return calculate_fitness_with_diversity(
-            daily_chromosome, requirements, user_profile, generation, max_generations, food_counts, min_diversity, max_diversity
-        )
     for day in range(days):
         if randomize_seed:
             np.random.seed(None)
-        user_profile = user_profiles[day]
-        requirements = calculate_daily_needs(user_profile)
         num_foods = len(FOOD_ITEMS)
         population = initialize_population(pop_size, num_foods)
         best_fitness = float("-inf")
         best_individual = None
-        best_nutrition_info = None
+        best_info = None
         for generation in range(generations):
             fitnesses = []
-            nutrition_infos = []
+            infos = []
             for individual in population:
-                fitness, nutrition_info = fitness_with_weekly_penalty_and_diversity(
-                    individual, requirements, user_profile, generation, generations, weekly_food_counts
+                fitness, info = calculate_fuzzy_diversity_fitness(
+                    individual, target_diversity, base_width
                 )
                 fitnesses.append(fitness)
-                nutrition_infos.append(nutrition_info)
+                infos.append(info)
             max_fitness_idx = np.argmax(fitnesses)
             if fitnesses[max_fitness_idx] > best_fitness:
                 best_fitness = fitnesses[max_fitness_idx]
                 best_individual = population[max_fitness_idx].copy()
-                best_nutrition_info = nutrition_infos[max_fitness_idx]
-            print(f"[Day {day+1}] Generation {generation+1}/{generations}: Best Fitness = {fitnesses[max_fitness_idx]:.2f}, Cost = EGP{nutrition_infos[max_fitness_idx]['cost']:.2f}")
+                best_info = infos[max_fitness_idx]
+            print(f"[Day {day+1}] Generation {generation+1}/{generations}: Best Fuzzy Membership = {fitnesses[max_fitness_idx]:.3f} (Diversity = {infos[max_fitness_idx]['diversity']})")
             selected = tournament_selection(population, fitnesses)
             offspring = crossover_population(selected)
             current_mutation_prob = 0.2 * (1 - generation / generations)
             offspring = mutate_population(offspring, mutation_rate=current_mutation_prob)
             population = elitism(population, offspring, fitnesses, elite_size)
-        for i, portion in enumerate(best_individual):
-            if portion > 10:
-                weekly_food_counts[i] += 1
-        for k in weekly_nutrition:
-            weekly_nutrition[k] += best_nutrition_info.get(k, 0)
-        daily_results.append((best_individual, best_nutrition_info))
-    weekly_averages = {k: v / days for k, v in weekly_nutrition.items()}
-    return daily_results, weekly_nutrition, weekly_averages
+        daily_results.append((best_individual, best_info))
+    return daily_results
+
+
+def get_fuzzy_diversity_target():
+    print("\nEnter your target number of different foods per day (crisp value, e.g., 6):")
+    target = input("  Target diversity: ").strip()
+    target_diversity = int(target) if target.isdigit() else 6
+    return target_diversity
+
+
+def format_weekly_fuzzy_diversity_report(daily_results, target_diversity, base_width=4):
+    result = ["\n===== WEEKLY FUZZY DIVERSITY REPORT ====="]
+    for day, (chromosome, nutrition) in enumerate(daily_results, 1):
+        diversity = calculate_food_diversity(chromosome)
+        a = max(0, target_diversity - base_width // 2)
+        b = target_diversity
+        c = target_diversity + base_width // 2
+        membership = triangular_fuzzy_membership(diversity, a, b, c)
+        result.append(f"Day {day}: Diversity = {diversity}, Fuzzy Membership = {membership:.3f}, Triangle = ({a}, {b}, {c})")
+    return "\n".join(result)
+
+
+def format_weekly_plan_fuzzy_diversity(daily_results):
+    result = ["\n===== WEEKLY FUZZY DIVERSITY (Fuzzy Parameter Process) ====="]
+    for day, (chromosome, info) in enumerate(daily_results, 1):
+        a, b, c = info['triangle']
+        result.append(f"Day {day}: Diversity = {info['diversity']}, Fuzzy Membership = {info['membership']:.3f}, Triangle = ({a}, {b}, {c})")
+    return "\n".join(result)
 
 
 def get_weekly_user_profiles(base_profile):
@@ -570,15 +542,6 @@ def get_weekly_user_profiles(base_profile):
         return [base_profile.copy() for _ in range(7)]
 
 
-def get_diversity_settings():
-    print("\nSet daily food diversity constraints:")
-    min_div = input("  Minimum number of different foods per day (default 4): ").strip()
-    max_div = input("  Maximum number of different foods per day (default 8): ").strip()
-    min_diversity = int(min_div) if min_div.isdigit() else 4
-    max_diversity = int(max_div) if max_div.isdigit() else 8
-    return min_diversity, max_diversity
-
-
 def format_weekly_plan(daily_results, weekly_nutrition, weekly_averages, shopping_list):
     result = ["\n===== OPTIMAL WEEKLY DIET PLAN ====="]
     total_cost = weekly_nutrition.get("cost", 0)
@@ -599,6 +562,7 @@ def main_menu():
     print("1. Run with example profile")
     print("2. Enter custom profile")
     print("3. Run weekly planner")
+    print("4. Fuzzy Diversity Only (fuzzy parameter process)")
     print("0. Exit")
     choice = input("Select an option: ").strip()
     return choice[:1]  # Only first character
@@ -633,6 +597,25 @@ def get_user_profile():
     }
 
 
+def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=20, elite_size=10):
+    """
+    Run the daily genetic algorithm for each day of the week, aggregate results, and compute weekly nutrition/averages.
+    user_profiles: list of 7 user_profile dicts (one per day)
+    Returns: (daily_results, weekly_nutrition, weekly_averages)
+    """
+    days = 7
+    daily_results = []
+    weekly_nutrition = {k: 0.0 for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]}
+    for day in range(days):
+        user_profile = user_profiles[day]
+        best_individual, best_nutrition = genetic_algorithm(user_profile, pop_size=pop_size, generations=generations, elite_size=elite_size)
+        daily_results.append((best_individual, best_nutrition))
+        for k in weekly_nutrition:
+            weekly_nutrition[k] += best_nutrition.get(k, 0.0)
+    weekly_averages = {k: v / days for k, v in weekly_nutrition.items()}
+    return daily_results, weekly_nutrition, weekly_averages
+
+
 def main():
     while True:
         choice = main_menu()
@@ -653,13 +636,38 @@ def main():
         elif choice == "3":
             user_profile = get_user_profile()
             weekly_profiles = get_weekly_user_profiles(user_profile)
-            min_diversity, max_diversity = get_diversity_settings()
+            target_diversity = get_fuzzy_diversity_target()
             print("\nRunning genetic algorithm to find optimal weekly diet plan...")
             daily_results, weekly_nutrition, weekly_averages = weekly_genetic_algorithm(
-                weekly_profiles, min_diversity=min_diversity, max_diversity=max_diversity
+                weekly_profiles
             )
             shopping_list = generate_weekly_shopping_list(daily_results)
             result_str = format_weekly_plan(daily_results, weekly_nutrition, weekly_averages, shopping_list)
+            print(result_str)
+            # Fuzzy diversity report for each day
+            fuzzy_report = format_weekly_plan_fuzzy_diversity([
+                (chromosome, calculate_fuzzy_diversity_fitness(chromosome, target_diversity)[1])
+                for (chromosome, _) in daily_results
+            ])
+            print(fuzzy_report)
+            input("\nPress Enter to return to the main menu...")
+            continue
+        elif choice == "4":
+            target_diversity = get_fuzzy_diversity_target()
+            print("\nRunning genetic algorithm for FUZZY DIVERSITY ONLY (fuzzy parameter process)...")
+            user_profile = {
+                "age": 21,
+                "gender": "Male",
+                "weight": 75,
+                "height": 183,
+                "activity_level": "Moderate",
+                "goal": "maintain",
+            }
+            weekly_profiles = [user_profile.copy() for _ in range(7)]
+            daily_results = weekly_genetic_algorithm_fuzzy_diversity(
+                weekly_profiles, target_diversity=target_diversity
+            )
+            result_str = format_weekly_plan_fuzzy_diversity(daily_results)
             print(result_str)
             input("\nPress Enter to return to the main menu...")
             continue
