@@ -437,10 +437,115 @@ def format_meal_plan(daily_chromosome, daily_nutrition_info, user_profile):
     return "\n".join(result)
 
 
+def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=20, elite_size=10, randomize_seed=True):
+    """
+    Run the daily genetic algorithm 7 times, tracking foods used and penalizing repeats for variety.
+    user_profiles: list of 7 user_profile dicts (can be the same or different for each day)
+    Returns: list of (daily_chromosome, daily_nutrition_info) for each day, and a weekly nutrition summary.
+    """
+    days = 7
+    weekly_food_counts = np.zeros(len(FOOD_ITEMS))
+    weekly_nutrition = {k: 0 for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]}
+    daily_results = []
+
+    def fitness_with_weekly_penalty(daily_chromosome, requirements, user_profile, generation, max_generations, food_counts):
+        # Use the original fitness function
+        fitness, nutrition_info = calculate_fitness(
+            daily_chromosome, requirements, user_profile, generation, max_generations
+        )
+        # Add penalty for foods already used a lot this week
+        penalty = 0
+        for i, portion in enumerate(daily_chromosome):
+            if portion > 10:
+                penalty += 20 * food_counts[i]  # 20 points per previous use
+        fitness -= penalty
+        return fitness, nutrition_info
+
+    for day in range(days):
+        if randomize_seed:
+            np.random.seed(None)
+        user_profile = user_profiles[day]
+        requirements = calculate_daily_needs(user_profile)
+        num_foods = len(FOOD_ITEMS)
+        population = initialize_population(pop_size, num_foods)
+        best_fitness = float("-inf")
+        best_individual = None
+        best_nutrition_info = None
+        for generation in range(generations):
+            fitnesses = []
+            nutrition_infos = []
+            for individual in population:
+                fitness, nutrition_info = fitness_with_weekly_penalty(
+                    individual, requirements, user_profile, generation, generations, weekly_food_counts
+                )
+                fitnesses.append(fitness)
+                nutrition_infos.append(nutrition_info)
+            max_fitness_idx = np.argmax(fitnesses)
+            if fitnesses[max_fitness_idx] > best_fitness:
+                best_fitness = fitnesses[max_fitness_idx]
+                best_individual = population[max_fitness_idx].copy()
+                best_nutrition_info = nutrition_infos[max_fitness_idx]
+            print(f"[Day {day+1}] Generation {generation+1}/{generations}: Best Fitness = {fitnesses[max_fitness_idx]:.2f}, Cost = EGP{nutrition_infos[max_fitness_idx]['cost']:.2f}")
+            selected = tournament_selection(population, fitnesses)
+            offspring = crossover_population(selected)
+            current_mutation_prob = 0.2 * (1 - generation / generations)
+            offspring = mutate_population(offspring, mutation_rate=current_mutation_prob)
+            population = elitism(population, offspring, fitnesses, elite_size)
+        # Track foods used in significant portions
+        for i, portion in enumerate(best_individual):
+            if portion > 10:
+                weekly_food_counts[i] += 1
+        # Track weekly nutrition
+        for k in weekly_nutrition:
+            weekly_nutrition[k] += best_nutrition_info.get(k, 0)
+        daily_results.append((best_individual, best_nutrition_info))
+    # Compute weekly nutrition averages
+    weekly_averages = {k: v / days for k, v in weekly_nutrition.items()}
+    return daily_results, weekly_nutrition, weekly_averages
+
+
+def get_weekly_user_profiles(base_profile):
+    """
+    Ask user if they want to set different goals for different days.
+    Returns a list of 7 user_profile dicts.
+    """
+    print("\nDo you want to set different goals for different days? (y/N)")
+    ans = input().strip().lower()
+    if ans == "y":
+        profiles = []
+        for i in range(7):
+            print(f"\nDay {i+1}:")
+            print("  (M)aintain, (L)ose, (G)ain")
+            goal_input = input("  Goal: ").strip().lower()[:1]
+            goal_map = {"m": "maintain", "l": "lose", "g": "gain"}
+            goal = goal_map.get(goal_input, base_profile["goal"])
+            day_profile = base_profile.copy()
+            day_profile["goal"] = goal
+            profiles.append(day_profile)
+        return profiles
+    else:
+        return [base_profile.copy() for _ in range(7)]
+
+
+def format_weekly_plan(daily_results, weekly_nutrition, weekly_averages):
+    result = ["\n===== OPTIMAL WEEKLY DIET PLAN ====="]
+    total_cost = weekly_nutrition.get("cost", 0)
+    result.append(f"Total Weekly Cost: EGP{total_cost:.2f}")
+    result.append("\nAverage Daily Nutrition:")
+    for nutrient, value in weekly_averages.items():
+        if nutrient != "cost":
+            result.append(f"  - {nutrient.capitalize()}: {value:.1f}")
+    for day, (chromosome, nutrition) in enumerate(daily_results, 1):
+        result.append(f"\n--- Day {day} ---")
+        result.append(format_meal_plan(chromosome, nutrition, {}))
+    return "\n".join(result)
+
+
 def main_menu():
     print("\n==== Diet Planner Main Menu ====")
     print("1. Run with example profile")
     print("2. Enter custom profile")
+    print("3. Run weekly planner")
     print("0. Exit")
     choice = input("Select an option: ").strip()
     return choice[:1]  # Only first character
@@ -492,14 +597,23 @@ def main():
                 print(f"  {k}: {v}")
         elif choice == "2":
             user_profile = get_user_profile()
+        elif choice == "3":
+            user_profile = get_user_profile()
+            weekly_profiles = get_weekly_user_profiles(user_profile)
+            print("\nRunning genetic algorithm to find optimal weekly diet plan...")
+            daily_results, weekly_nutrition, weekly_averages = weekly_genetic_algorithm(weekly_profiles)
+            result_str = format_weekly_plan(daily_results, weekly_nutrition, weekly_averages)
+            print(result_str)
+            input("\nPress Enter to return to the main menu...")
+            continue
         elif choice == "0":
-            print("Exiting Diet Planner. Goodbye!")
+            print("Salam")
             return
         else:
-            print("Invalid option. Please try again.")
+            print("Invalid.")
             continue
 
-        print("\nRunning genetic algorithm to find optimal DAILY diet plan...")
+        print("\nRunning genetic algorithm to find optimal daily diet plan...")
         best_daily_individual, best_daily_nutrition = genetic_algorithm(user_profile)
         if best_daily_individual is not None:
             result_str = format_meal_plan(best_daily_individual, best_daily_nutrition, user_profile)
