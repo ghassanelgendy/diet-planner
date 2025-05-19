@@ -48,9 +48,9 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
     fat_calories = calories * fat_ratio
     carb_calories = calories * carb_ratio
 
-    protein_grams = protein_calories / 4    # 4 calories per gram of protein
-    fat_grams = fat_calories / 9            # 9 calories per gram of fat
-    carb_grams = carb_calories / 4          # 4 calories per gram of carbs
+    protein_grams = protein_calories / 4  # 4 calories per gram of protein
+    fat_grams = fat_calories / 9  # 9 calories per gram of fat
+    carb_grams = carb_calories / 4  # 4 calories per gram of carbs
 
     # cholesterol w iron needs
     if gender == "male" or age > 50:
@@ -59,7 +59,7 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
     else:
         iron_mg = 18
         cholesterol_max = 300  # mg
-    
+
     return {
         "calories": calories,
         "protein": protein_grams,
@@ -70,17 +70,24 @@ def calculate_daily_needs(user_profile: Dict[str, Any]) -> Dict[str, float]:
     }
 
 
-def initialize_population(pop_size, num_foods, min_portion=0, max_portion=300): #daily meal plan bs random 
+def initialize_population(
+    pop_size, num_foods, min_portion=0, max_portion=300
+):  # daily meal plan bs random
     return np.random.uniform(min_portion, max_portion, (pop_size, num_foods))
 
 
-def calculate_nutrition_and_cost_for_day(daily_chromosome_portions): #matrix feh cost elmeals w nutration facts
-    totals = {k: 0 for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]}
+def calculate_nutrition_and_cost_for_day(
+    daily_chromosome_portions,
+):  # matrix feh cost elmeals w nutration facts
+    totals = {
+        k: 0
+        for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]
+    }
     for i, portion in enumerate(daily_chromosome_portions):
         if portion > 0:
             food = FOOD_ITEMS[i]
             data = FOOD_DATABASE[food]
-            factor = portion / 100.0 #kool elakl feh nutration facts fel 100gram
+            factor = portion / 100.0  # kool elakl feh nutration facts fel 100gram
             for k in totals:
                 if k in data:
                     totals[k] += data[k] * factor
@@ -88,11 +95,12 @@ def calculate_nutrition_and_cost_for_day(daily_chromosome_portions): #matrix feh
 
 
 def calculate_fitness(
-    meal_plan_chromosome, 
+    meal_plan_chromosome,
     nutrient_requirements,
     user_profile,
-    current_generation, 
-    total_generations):
+    current_generation,
+    total_generations,
+):
 
     # Fitness(x, Gen) = -ActualCost(x) - (PW(Gen) * TotalNutrientBasePenalty(x) + P_small_portions_base(x))
     # 1. Calculate Actual_k(x) and ActualCost(x)
@@ -190,10 +198,14 @@ def calculate_fitness(
             group = FOOD_GROUPS.get(food, None)
             if group:
                 group_counts[group] = group_counts.get(group, 0) + 1
-    food_group_diversity_penalty = sum(50 * (count - 1) for count in group_counts.values() if count > 1)
+    food_group_diversity_penalty = sum(
+        50 * (count - 1) for count in group_counts.values() if count > 1
+    )
 
     # --- Base Small Portions Penalty small_portions_penalty ---
-    small_portions_count = sum(1 for portion in meal_plan_chromosome if 0 < portion < 20)
+    small_portions_count = sum(
+        1 for portion in meal_plan_chromosome if 0 < portion < 20
+    )
     small_portions_penalty = 0.75 * small_portions_count
 
     # 3. Dynamic Penalty Weight penalty_weight
@@ -215,7 +227,7 @@ def calculate_fitness(
     return fitness, actual_nutrients_with_cost
 
 
-def tournament_selection(population, fitnesses, tournament_size=250):
+def tournament_selection(population, fitnesses, tournament_size=20):
     """Select individuals using tournament selection."""
     selected = []
 
@@ -280,7 +292,7 @@ def simulated_binary_crossover(parent1, parent2, eta=4):
     return child1, child2
 
 
-def gaussian_mutation(individual, mutation_rate=0.6, mutation_scale=25.0):
+def gaussian_mutation(individual, mutation_rate=0.15, mutation_scale=20):
     """
     Apply Gaussian mutation to an individual.
 
@@ -327,7 +339,7 @@ def crossover_population(selected, crossover_rate=0.8):
     return np.array(offspring)
 
 
-def mutate_population(offspring, mutation_rate=0.2):
+def mutate_population(offspring, mutation_rate=0.05):
     """Apply mutation to the offspring population."""
     mutated = []
     for individual in offspring:
@@ -336,7 +348,7 @@ def mutate_population(offspring, mutation_rate=0.2):
     return np.array(mutated)
 
 
-def elitism(population, new_population, fitnesses, elite_size=2):
+def elitism(population, new_population, fitnesses, elite_size):
     """
     Preserve the elite_size best individuals from the original population.
     """
@@ -350,7 +362,7 @@ def elitism(population, new_population, fitnesses, elite_size=2):
     return new_population
 
 
-def genetic_algorithm(user_profile, pop_size=1500, generations=20, elite_size=10):
+def genetic_algorithm(user_profile, pop_size=400, generations=60, elite_size=15):
     """
     Main genetic algorithm loop for DAILY diet planning.
     """
@@ -364,7 +376,9 @@ def genetic_algorithm(user_profile, pop_size=1500, generations=20, elite_size=10
         fitnesses = []
         nutrition_infos = []
         for individual in population:
-            fitness, nutrition_info = calculate_fitness(individual, requirements, user_profile, generation, generations)
+            fitness, nutrition_info = calculate_fitness(
+                individual, requirements, user_profile, generation, generations
+            )
             fitnesses.append(fitness)
             nutrition_infos.append(nutrition_info)
         max_fitness_idx = np.argmax(fitnesses)
@@ -373,7 +387,9 @@ def genetic_algorithm(user_profile, pop_size=1500, generations=20, elite_size=10
             best_individual = population[max_fitness_idx].copy()
             best_nutrition_info = nutrition_infos[max_fitness_idx]
         # Print progress for this generation
-        print(f"Generation {generation+1}/{generations}: Best Fitness = {fitnesses[max_fitness_idx]:.2f}, Cost = EGP{nutrition_infos[max_fitness_idx]['cost']:.2f}")
+        print(
+            f"Generation {generation+1}/{generations}: Best Fitness = {fitnesses[max_fitness_idx]:.2f}, Cost = EGP{nutrition_infos[max_fitness_idx]['cost']:.2f}"
+        )
         selected = tournament_selection(population, fitnesses)
         offspring = crossover_population(selected)
         current_mutation_prob = 0.2 * (1 - generation / generations)
@@ -397,7 +413,9 @@ def format_meal_plan(daily_chromosome, daily_nutrition_info, user_profile):
         if portion > 10:
             food_name = FOOD_ITEMS[i]
             food_item_cost = FOOD_DATABASE[food_name]["cost"] * portion / 100.0
-            foods_for_day.append(f"    - {food_name.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_item_cost:.2f})")
+            foods_for_day.append(
+                f"    - {food_name.replace('_', ' ').title()}: {portion:.0f}g (EGP{food_item_cost:.2f})"
+            )
     if foods_for_day:
         result.extend(foods_for_day)
     else:
@@ -426,7 +444,9 @@ def format_shopping_list(shopping_list):
     result = ["\n===== WEEKLY SHOPPING LIST ====="]
     total_cost = sum(item[2] for item in shopping_list)
     for food, grams, cost in shopping_list:
-        result.append(f"- {food.replace('_', ' ').title()}: {grams:.0f}g (EGP{cost:.2f})")
+        result.append(
+            f"- {food.replace('_', ' ').title()}: {grams:.0f}g (EGP{cost:.2f})"
+        )
     result.append(f"\nTotal Shopping Cost: EGP{total_cost:.2f}")
     return "\n".join(result)
 
@@ -441,7 +461,11 @@ def calculate_fuzzy_diversity_fitness(daily_chromosome, target_diversity, base_w
     b = target_diversity
     c = target_diversity + base_width // 2
     membership = triangular_fuzzy_membership(diversity, a, b, c)
-    return membership, {"diversity": diversity, "membership": membership, "triangle": (a, b, c)}
+    return membership, {
+        "diversity": diversity,
+        "membership": membership,
+        "triangle": (a, b, c),
+    }
 
 
 def triangular_fuzzy_membership(d, a, b, c):
@@ -457,7 +481,15 @@ def triangular_fuzzy_membership(d, a, b, c):
         return 0.0
 
 
-def weekly_genetic_algorithm_fuzzy_diversity(user_profiles, target_diversity, base_width=4, pop_size=1500, generations=20, elite_size=10, randomize_seed=True):
+def weekly_genetic_algorithm_fuzzy_diversity(
+    user_profiles,
+    target_diversity,
+    base_width=4,
+    pop_size=1500,
+    generations=20,
+    elite_size=10,
+    randomize_seed=True,
+):
     days = 7
     daily_results = []
     for day in range(days):
@@ -482,18 +514,24 @@ def weekly_genetic_algorithm_fuzzy_diversity(user_profiles, target_diversity, ba
                 best_fitness = fitnesses[max_fitness_idx]
                 best_individual = population[max_fitness_idx].copy()
                 best_info = infos[max_fitness_idx]
-            print(f"[Day {day+1}] Generation {generation+1}/{generations}: Best Fuzzy Membership = {fitnesses[max_fitness_idx]:.3f} (Diversity = {infos[max_fitness_idx]['diversity']})")
+            print(
+                f"[Day {day+1}] Generation {generation+1}/{generations}: Best Fuzzy Membership = {fitnesses[max_fitness_idx]:.3f} (Diversity = {infos[max_fitness_idx]['diversity']})"
+            )
             selected = tournament_selection(population, fitnesses)
             offspring = crossover_population(selected)
             current_mutation_prob = 0.2 * (1 - generation / generations)
-            offspring = mutate_population(offspring, mutation_rate=current_mutation_prob)
+            offspring = mutate_population(
+                offspring, mutation_rate=current_mutation_prob
+            )
             population = elitism(population, offspring, fitnesses, elite_size)
         daily_results.append((best_individual, best_info))
     return daily_results
 
 
 def get_fuzzy_diversity_target():
-    print("\nEnter your target number of different foods per day (crisp value, e.g., 6):")
+    print(
+        "\nEnter your target number of different foods per day (crisp value, e.g., 6):"
+    )
     target = input("  Target diversity: ").strip()
     target_diversity = int(target) if target.isdigit() else 6
     return target_diversity
@@ -507,15 +545,19 @@ def format_weekly_fuzzy_diversity_report(daily_results, target_diversity, base_w
         b = target_diversity
         c = target_diversity + base_width // 2
         membership = triangular_fuzzy_membership(diversity, a, b, c)
-        result.append(f"Day {day}: Diversity = {diversity}, Fuzzy Membership = {membership:.3f}, Triangle = ({a}, {b}, {c})")
+        result.append(
+            f"Day {day}: Diversity = {diversity}, Fuzzy Membership = {membership:.3f}, Triangle = ({a}, {b}, {c})"
+        )
     return "\n".join(result)
 
 
 def format_weekly_plan_fuzzy_diversity(daily_results):
     result = ["\n===== WEEKLY FUZZY DIVERSITY (Fuzzy Parameter Process) ====="]
     for day, (chromosome, info) in enumerate(daily_results, 1):
-        a, b, c = info['triangle']
-        result.append(f"Day {day}: Diversity = {info['diversity']}, Fuzzy Membership = {info['membership']:.3f}, Triangle = ({a}, {b}, {c})")
+        a, b, c = info["triangle"]
+        result.append(
+            f"Day {day}: Diversity = {info['diversity']}, Fuzzy Membership = {info['membership']:.3f}, Triangle = ({a}, {b}, {c})"
+        )
     return "\n".join(result)
 
 
@@ -580,9 +622,15 @@ def get_user_profile():
         "l": "Light",
         "m": "Moderate",
         "a": "Active",
-        "v": "Very active"
+        "v": "Very active",
     }
-    activity_input = input("Activity level (S)edentary, (L)ight, (M)oderate, (A)ctive, (V)ery active: ").strip().lower()[:1]
+    activity_input = (
+        input(
+            "Activity level (S)edentary, (L)ight, (M)oderate, (A)ctive, (V)ery active: "
+        )
+        .strip()
+        .lower()[:1]
+    )
     activity_level = activity_map.get(activity_input, "Moderate")
     goal_map = {"m": "maintain", "l": "lose", "g": "gain"}
     goal_input = input("Goal (M)aintain, (L)ose, (G)ain: ").strip().lower()[:1]
@@ -597,7 +645,9 @@ def get_user_profile():
     }
 
 
-def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=20, elite_size=10):
+def weekly_genetic_algorithm(
+    user_profiles, pop_size=1500, generations=20, elite_size=10
+):
     """
     Run the daily genetic algorithm for each day of the week, aggregate results, and compute weekly nutrition/averages.
     user_profiles: list of 7 user_profile dicts (one per day)
@@ -605,10 +655,18 @@ def weekly_genetic_algorithm(user_profiles, pop_size=1500, generations=20, elite
     """
     days = 7
     daily_results = []
-    weekly_nutrition = {k: 0.0 for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]}
+    weekly_nutrition = {
+        k: 0.0
+        for k in ["calories", "protein", "fats", "carbs", "iron", "cholesterol", "cost"]
+    }
     for day in range(days):
         user_profile = user_profiles[day]
-        best_individual, best_nutrition = genetic_algorithm(user_profile, pop_size=pop_size, generations=generations, elite_size=elite_size)
+        best_individual, best_nutrition = genetic_algorithm(
+            user_profile,
+            pop_size=pop_size,
+            generations=generations,
+            elite_size=elite_size,
+        )
         daily_results.append((best_individual, best_nutrition))
         for k in weekly_nutrition:
             weekly_nutrition[k] += best_nutrition.get(k, 0.0)
@@ -623,10 +681,10 @@ def main():
             user_profile = {
                 "age": 21,
                 "gender": "Male",
-                "weight": 75,
+                "weight": 72,
                 "height": 183,
-                "activity_level": "Moderate",
-                "goal": "maintain",
+                "activity_level": "Active",
+                "goal": "gain",
             }
             print("\nUsing default example profile:")
             for k, v in user_profile.items():
@@ -642,19 +700,30 @@ def main():
                 weekly_profiles
             )
             shopping_list = generate_weekly_shopping_list(daily_results)
-            result_str = format_weekly_plan(daily_results, weekly_nutrition, weekly_averages, shopping_list)
+            result_str = format_weekly_plan(
+                daily_results, weekly_nutrition, weekly_averages, shopping_list
+            )
             print(result_str)
             # Fuzzy diversity report for each day
-            fuzzy_report = format_weekly_plan_fuzzy_diversity([
-                (chromosome, calculate_fuzzy_diversity_fitness(chromosome, target_diversity)[1])
-                for (chromosome, _) in daily_results
-            ])
+            fuzzy_report = format_weekly_plan_fuzzy_diversity(
+                [
+                    (
+                        chromosome,
+                        calculate_fuzzy_diversity_fitness(chromosome, target_diversity)[
+                            1
+                        ],
+                    )
+                    for (chromosome, _) in daily_results
+                ]
+            )
             print(fuzzy_report)
             input("\nPress Enter to return to the main menu...")
             continue
         elif choice == "4":
             target_diversity = get_fuzzy_diversity_target()
-            print("\nRunning genetic algorithm for FUZZY DIVERSITY ONLY (fuzzy parameter process)...")
+            print(
+                "\nRunning genetic algorithm for FUZZY DIVERSITY ONLY (fuzzy parameter process)..."
+            )
             user_profile = {
                 "age": 21,
                 "gender": "Male",
@@ -681,7 +750,9 @@ def main():
         print("\nRunning genetic algorithm to find optimal daily diet plan...")
         best_daily_individual, best_daily_nutrition = genetic_algorithm(user_profile)
         if best_daily_individual is not None:
-            result_str = format_meal_plan(best_daily_individual, best_daily_nutrition, user_profile)
+            result_str = format_meal_plan(
+                best_daily_individual, best_daily_nutrition, user_profile
+            )
             print(result_str)
         else:
             print("No suitable daily meal plan found.")
