@@ -134,8 +134,8 @@ def calculate_fitness(
     target_calories = nutrient_requirements.get("calories", 1)
     # Define fuzzy "acceptable" region (customize as needed)
     a = target_calories * 0.90  # 0 membership below this
-    b = target_calories * 0.97  # 1 membership above this
-    c = target_calories * 1.03  # 1 membership below this
+    b = target_calories * 0.99  # 1 membership above this
+    c = target_calories * 1.01  # 1 membership below this
     d = target_calories * 1.10  # 0 membership above this
     calorie_fuzzy_score = trapezoidal_membership(actual_calories, a, b, c, d)
     # Use (1 - calorie_fuzzy_score) as a soft penalty, scaled
