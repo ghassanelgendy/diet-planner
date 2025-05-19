@@ -351,10 +351,11 @@ def elitism(population, new_population, fitnesses, elite_size):
     return new_population
 
 
-def genetic_algorithm(user_profile, pop_size=400, generations=60, elite_size=15):
+def genetic_algorithm(user_profile, pop_size=400, generations=100, elite_size=15):
     """
     Main genetic algorithm loop for DAILY diet planning.
     """
+    np.random.seed(42)
     requirements = calculate_daily_needs(user_profile)
     num_foods = len(FOOD_ITEMS)
     population = initialize_population(pop_size, num_foods)
